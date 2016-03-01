@@ -217,11 +217,20 @@ namespace UAssetTools
                 throw new Exception("This version not supported!");
             Flags = ReadInt32(fs);
             HistoryType = ReadByte(fs);
-            if (HistoryType != 0)
+            if (HistoryType != 0 && HistoryType != 255)
                 throw new Exception("Other types not supported!");
-            Namespace = ReadString(fs);
-            Key = ReadString(fs);
-            SourceStringRaw = ReadString(fs);
+            if (HistoryType == 0)
+            {
+                Namespace = ReadString(fs);
+                Key = ReadString(fs);
+                SourceStringRaw = ReadString(fs);
+            }
+            else
+            {
+                Namespace = "";
+                Key = "";
+                SourceStringRaw = "";
+            }
 
             PackageReader.Texts.Add(new KeyValuePair<string, string>(Key, SourceStringRaw));
         }
@@ -230,9 +239,12 @@ namespace UAssetTools
         {
             WriteInt32(fs, Flags);
             WriteByte(fs, HistoryType);
-            WriteString(fs, Namespace);
-            WriteString(fs, Key);
-            WriteString(fs, SourceStringRaw);
+            if (HistoryType == 0)
+            {
+                WriteString(fs, Namespace);
+                WriteString(fs, Key);
+                WriteString(fs, SourceStringRaw);
+            }
         }
     }
 

@@ -9,7 +9,7 @@ namespace UAssetTools
     {
         public FileSummary PackageFileSummary;
         public static List<string> NameMap;
-        public List<ObjectImport> ImportMap;
+        public static List<ObjectImport> ImportMap;
         public List<ObjectExport> ExportMap;
 
         public Int64 NameOffset;
@@ -40,6 +40,7 @@ namespace UAssetTools
             DeSerializeImportMap(fs);
             DeSerializeExportMap(fs);
             ReadProperties(fs);
+            fs.Close();
         }
 
         public void DeSerializeNameMap(FileStream fs)
@@ -107,6 +108,10 @@ namespace UAssetTools
                                 ExportMap[i].Object = new UserDefinedEnum();
                                 ((UserDefinedEnum)ExportMap[i].Object).DeSerialize(fs);
                                 break;
+                            case "DataTable":
+                                ExportMap[i].Object = new DataTable();
+                                ((DataTable)ExportMap[i].Object).DeSerialize(fs);
+                                break;
                             default:
                                 throw new Exception("Unknown object name!");
                         }
@@ -151,6 +156,7 @@ namespace UAssetTools
                 (Int32)AssetRegistryDataOffset
             );
             WriteInt32(fs, PackageFileSummary.Tag);
+            fs.Close();
         }
 
         public void SerializeNameMap(FileStream fs)

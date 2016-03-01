@@ -179,4 +179,50 @@ namespace UAssetTools
             base.DeSerialize(fs);
         }
     }
+
+    public class DataTable : Object
+    {
+        public Int32 Something; // ???
+
+        public Int32 NumRows;
+        public List<KeyValuePair<Name, StructProperty>> RowMap;
+
+        public DataTable()
+        {
+            RowMap = new List<KeyValuePair<Name, StructProperty>>();
+        }
+
+        public override void DeSerialize(FileStream fs)
+        {
+            base.DeSerialize(fs);
+
+            Something = ReadInt32(fs);
+
+            // ???
+            /*
+            string sObjectName = "";
+            for (int i = 0; i < Properties.Properties.Count; i++)
+            {
+                if (PackageReader.NameMap[Properties.Properties[i].Key.Name.ComparisonIndex] == "RowStruct")
+                {
+                    sObjectName = PackageReader.NameMap[PackageReader.ImportMap[-(Int32)Properties.Properties[i].Value - 1].ObjectName.ComparisonIndex];
+                }
+            }
+            if (sObjectName == "")
+                throw new Exception("RowStruct property not found!");
+            */
+
+            NumRows = ReadInt32(fs);
+
+            for (int i = 0; i < NumRows; i++)
+            {
+                Name RowName = new Name();
+                RowName.DeSerialize(fs);
+                string sRowName = PackageReader.NameMap[RowName.ComparisonIndex];
+                StructProperty RowData = new StructProperty();
+                RowData.DeSerialize(fs);
+                RowMap.Add(new KeyValuePair<Name, StructProperty>(RowName, RowData));
+            }
+        }
+    }
 }

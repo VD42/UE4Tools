@@ -17,6 +17,8 @@ namespace UAssetTools
         public Name EnumName;
         public Name InnerType;
 
+        public Int32 ClassIndex;
+
         public Int64 SizeOffset;
 
         public PropertyTag()
@@ -170,6 +172,9 @@ namespace UAssetTools
                                 throw new Exception("Unknown type!");
                         }
                         break;
+                    case "ObjectProperty":
+                        Properties.Add(new KeyValuePair<PropertyTag, object>(Tag, ReadInt32(fs))); // ??? ClassName 
+                        break;
                     default:
                         throw new Exception("Unknown type!");
                 }
@@ -256,6 +261,10 @@ namespace UAssetTools
                             default:
                                 throw new Exception("Unknown type!");
                         }
+                        break;
+                    case "ObjectProperty":
+                        Properties[i].Key.Serialize(fs);
+                        WriteInt32(fs, (Int32)Properties[i].Value); // ??? ClassName
                         break;
                     default:
                         throw new Exception("Unknown type!");
