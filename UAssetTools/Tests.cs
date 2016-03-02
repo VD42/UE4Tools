@@ -10,13 +10,15 @@ namespace UAssetTools
     [TestClass]
     public class Tests
     {
-        public bool OpenSave(string file_in)
+        public bool OpenSave(string file_in, bool bSoftMode = false)
         {
             bool bResult = false;
             string file_out = System.IO.Path.GetTempFileName();
             try
             {
                 PackageReader pr = new PackageReader();
+                if (bSoftMode)
+                    PackageReader.bEnableSoftMode = true;
                 pr.OpenPackageFile(file_in);
                 pr.SavePackageFile(file_out);
                 byte[] file_in_content = System.IO.File.ReadAllBytes(file_in);
@@ -54,6 +56,13 @@ namespace UAssetTools
         public void TestDataTable()
         {
             Assert.IsTrue(OpenSave("..\\..\\Tests\\DataTable_1.uasset"));
+        }
+
+        [TestMethod]
+        public void TestSomething()
+        {
+            //Assert.IsTrue(OpenSave("C:\\Program Files (x86)\\Steam\\SteamApps\\common\\The Park\\AtlanticIslandPark\\Content\\Maps\\AtlanticIslandPark\\AIP_Gameplay1.umap", true));
+            Assert.IsTrue(OpenSave("C:\\Program Files (x86)\\Steam\\SteamApps\\common\\The Park\\AtlanticIslandPark\\Content\\UI\\MainMenu\\MainMenu.uasset", true));
         }
     }
 }

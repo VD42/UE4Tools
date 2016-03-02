@@ -268,4 +268,36 @@ namespace UAssetTools
             }
         }
     }
+
+    public class RawObject : Object
+    {
+        public override void DeSerialize(FileStream fs)
+        {
+            // Nothing
+        }
+
+        public override void Serialize(FileStream fs)
+        {
+            // Nothing
+        }
+    }
+
+    public class Function : Object
+    {
+        //public Int32 Something; // ???
+
+        public UInt32 FunctionFlags;
+
+        public override void DeSerialize(FileStream fs)
+        {
+            base.DeSerialize(fs);
+
+            //WriteInt32(fs, Something); // ???
+
+            FunctionFlags = ReadUInt32(fs);
+            if ((FunctionFlags & 0x00000040) == 0x00000040)
+                throw new Exception("This flag not supported!");
+
+        }
+    }
 }

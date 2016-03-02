@@ -11,6 +11,7 @@ namespace UAssetTools
         public static List<string> NameMap;
         public static List<ObjectImport> ImportMap;
         public List<ObjectExport> ExportMap;
+        public List<List<Int32>> DependsMap;
 
         public Int64 NameOffset;
         public Int64 ImportOffset;
@@ -23,15 +24,20 @@ namespace UAssetTools
         public static List<KeyValuePair<string, string>> Texts;
         public static List<KeyValuePair<string, string>> TextsToReplace;
 
+        public static bool bEnableSoftMode;
+
         public PackageReader()
         {
             PackageFileSummary = new FileSummary();
             NameMap = new List<string>();
             ImportMap = new List<ObjectImport>();
             ExportMap = new List<ObjectExport>();
+            DependsMap = new List<List<Int32>>();
 
             Texts = new List<KeyValuePair<string, string>>();
             TextsToReplace = new List<KeyValuePair<string, string>>();
+
+            bEnableSoftMode = false;
         }
 
         public void OpenPackageFile(string filename)
@@ -41,6 +47,10 @@ namespace UAssetTools
             DeSerializeNameMap(fs);
             DeSerializeImportMap(fs);
             DeSerializeExportMap(fs);
+            DeSerializeDependsMap(fs);
+            int AssetRegistryData = ReadInt32(fs);
+            if (AssetRegistryData != 0)
+                throw new Exception("Not supported!");
             ReadProperties(fs);
             fs.Close();
         }
@@ -81,17 +91,37 @@ namespace UAssetTools
             }
         }
 
+        public void DeSerializeDependsMap(FileStream fs)
+        {
+            fs.Seek(PackageFileSummary.DependsOffset, SeekOrigin.Begin);
+            for (int i = 0; i < PackageFileSummary.ExportCount; i++)
+            {
+                DependsMap.Add(new List<Int32>());
+                Int32 Count = ReadInt32(fs);
+                for (int j = 0; j < Count; j++)
+                    DependsMap[i].Add(ReadInt32(fs));
+            }
+        }
+
         public void ReadProperties(FileStream fs)
         {
             for (int i = 0; i < ExportMap.Count; i++)
             {
+                if (fs.Position != ExportMap[i].SerialOffset)
+                    throw new Exception("Bad read?");
                 fs.Seek(ExportMap[i].SerialOffset, SeekOrigin.Begin);
 
-                if (ExportMap[i].ClassIndex >= 0)
+                Int32 ClassIndex = 0;
+
+                if (ExportMap[i].ClassIndex < 0)
+                    ClassIndex = ExportMap[i].ClassIndex;
+                else if (ExportMap[i].ClassIndex > 0)
+                    ClassIndex = ExportMap[ExportMap[i].ClassIndex - 1].ClassIndex; // ???
+                else
                     throw new Exception("Not supported!");
 
-                string sClassName = PackageReader.NameMap[ImportMap[-ExportMap[i].ClassIndex - 1].ClassName.ComparisonIndex];
-                string sObjectName = PackageReader.NameMap[ImportMap[-ExportMap[i].ClassIndex - 1].ObjectName.ComparisonIndex];
+                string sClassName = PackageReader.NameMap[ImportMap[-ClassIndex - 1].ClassName.ComparisonIndex];
+                string sObjectName = PackageReader.NameMap[ImportMap[-ClassIndex - 1].ObjectName.ComparisonIndex];
 
                 switch (sClassName)
                 {
@@ -114,19 +144,32 @@ namespace UAssetTools
                                 ExportMap[i].Object = new DataTable();
                                 ((DataTable)ExportMap[i].Object).DeSerialize(fs);
                                 break;
+                            //case "Function":
+                            //    ExportMap[i].Object = new Function();
+                            //    ((Function)ExportMap[i].Object).DeSerialize(fs);
+                            //    break;
                             default:
-                                throw new Exception("Unknown object name!");
+                                if (!bEnableSoftMode)
+                                    throw new Exception("Unknown object name!");
+                                ExportMap[i].Object = new RawObject();
+                                ((RawObject)ExportMap[i].Object).DeSerialize(fs);
+                                break;
                         }
                         break;
                     default:
-                        throw new Exception("Unknown class name!");
+                        if (!bEnableSoftMode)
+                            throw new Exception("Unknown class name!");
+                        ExportMap[i].Object = new RawObject();
+                        ((RawObject)ExportMap[i].Object).DeSerialize(fs);
+                        break;
                 }
 
                 if (fs.Position < ExportMap[i].SerialOffset + ExportMap[i].SerialSize)
                 {
-                    throw new Exception("Bad read!");
-                    //ExportMap[i].TailSomething = new byte[ExportMap[i].SerialOffset + ExportMap[i].SerialSize - fs.Position];
-                    //fs.Read(ExportMap[i].TailSomething, 0, ExportMap[i].TailSomething.Length);
+                    if (!bEnableSoftMode)
+                        throw new Exception("Bad read!");
+                    ExportMap[i].TailSomething = new byte[ExportMap[i].SerialOffset + ExportMap[i].SerialSize - fs.Position];
+                    fs.Read(ExportMap[i].TailSomething, 0, ExportMap[i].TailSomething.Length);
                 }
             }
         }
@@ -139,7 +182,7 @@ namespace UAssetTools
             SerializeNameMap(fs);
             SerializeImportMap(fs);
             SerializeExportMap(fs);
-            WriteDepends(fs);
+            SerializeDependsMap(fs);
             WriteAssetRegistryData(fs);
             WriteProperties(fs);
             WriteBulkData(fs);
@@ -182,10 +225,15 @@ namespace UAssetTools
                 ExportMap[i].Serialize(fs);
         }
 
-        public void WriteDepends(FileStream fs)
+        public void SerializeDependsMap(FileStream fs)
         {
             DependsOffset = fs.Position;
-            WriteInt32(fs, 0); // not supported
+            for (int i = 0; i < PackageFileSummary.ExportCount; i++)
+            {
+                WriteInt32(fs, DependsMap[i].Count);
+                for (int j = 0; j < DependsMap[i].Count; j++)
+                    WriteInt32(fs, DependsMap[i][j]);
+            }
         }
         public void WriteAssetRegistryData(FileStream fs)
         {
@@ -201,8 +249,17 @@ namespace UAssetTools
             {
                 Int64 SerialOffset = fs.Position;
 
-                string sClassName = PackageReader.NameMap[ImportMap[-ExportMap[i].ClassIndex - 1].ClassName.ComparisonIndex];
-                string sObjectName = PackageReader.NameMap[ImportMap[-ExportMap[i].ClassIndex - 1].ObjectName.ComparisonIndex];
+                Int32 ClassIndex = 0;
+
+                if (ExportMap[i].ClassIndex < 0)
+                    ClassIndex = ExportMap[i].ClassIndex;
+                else if (ExportMap[i].ClassIndex > 0)
+                    ClassIndex = ExportMap[ExportMap[i].ClassIndex - 1].ClassIndex; // ???
+                else
+                    throw new Exception("Not supported!");
+
+                string sClassName = PackageReader.NameMap[ImportMap[-ClassIndex - 1].ClassName.ComparisonIndex];
+                string sObjectName = PackageReader.NameMap[ImportMap[-ClassIndex - 1].ObjectName.ComparisonIndex];
 
                 switch (sClassName)
                 {
@@ -222,11 +279,17 @@ namespace UAssetTools
                                 ((DataTable)ExportMap[i].Object).Serialize(fs);
                                 break;
                             default:
-                                throw new Exception("Unknown object name!");
+                                if (!bEnableSoftMode)
+                                    throw new Exception("Unknown object name!");
+                                fs.Write(ExportMap[i].TailSomething, 0, ExportMap[i].TailSomething.Length);
+                                break;
                         }
                         break;
                     default:
-                        throw new Exception("Unknown class name!");
+                        if (!bEnableSoftMode)
+                            throw new Exception("Unknown class name!");
+                        fs.Write(ExportMap[i].TailSomething, 0, ExportMap[i].TailSomething.Length);
+                        break;
                 }
 
                 Int64 SerialSize = fs.Position - SerialOffset;

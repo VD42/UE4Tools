@@ -99,7 +99,6 @@ namespace UAssetTools
 
         public StructProperty()
         {
-            
             Properties = new List<KeyValuePair<PropertyTag, object>>();
         }
 
