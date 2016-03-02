@@ -127,7 +127,7 @@ namespace PakTools
             {
                 string Filename = ReadString(fs);
 
-                Console.WriteLine("[" + i + " of " + NumEntries + "] " + Filename);
+                Console.WriteLine("[" + (i + 1) + " of " + NumEntries + "] " + Filename);
 
                 PakEntry Entry = new PakEntry();
                 Entry.DeSerialize(fs);

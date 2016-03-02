@@ -224,7 +224,7 @@ namespace UAssetTools
                             case "StructProperty":
                                 nStartPosition = fs.Position;
                                 WriteInt32(fs, ((List<StructProperty>)Properties[i].Value).Count);
-                                for (int j = 0; j < ((List<StructProperty>)Properties[j].Value).Count; i++)
+                                for (int j = 0; j < ((List<StructProperty>)Properties[i].Value).Count; j++)
                                     ((List<StructProperty>)Properties[i].Value)[j].Serialize(fs);
                                 nCurrentPosition = fs.Position;
                                 fs.Seek(Properties[i].Key.SizeOffset, SeekOrigin.Begin);
@@ -234,7 +234,7 @@ namespace UAssetTools
                             case "TextProperty":
                                 nStartPosition = fs.Position;
                                 WriteInt32(fs, ((List<Text>)Properties[i].Value).Count);
-                                for (int j = 0; j < ((List<Text>)Properties[j].Value).Count; i++)
+                                for (int j = 0; j < ((List<Text>)Properties[i].Value).Count; j++)
                                     ((List<Text>)Properties[i].Value)[j].Serialize(fs);
                                 nCurrentPosition = fs.Position;
                                 fs.Seek(Properties[i].Key.SizeOffset, SeekOrigin.Begin);

@@ -232,7 +232,15 @@ namespace UAssetTools
                 SourceStringRaw = "";
             }
 
-            PackageReader.Texts.Add(new KeyValuePair<string, string>(Key, SourceStringRaw));
+            if (Key != "")
+            {
+                PackageReader.Texts.Add(new KeyValuePair<string, string>(Key, SourceStringRaw));
+                for (int i = 0; i < PackageReader.TextsToReplace.Count; i++)
+                {
+                    if (PackageReader.TextsToReplace[i].Key == Key)
+                        SourceStringRaw = PackageReader.TextsToReplace[i].Value;
+                }
+            }
         }
 
         public void Serialize(FileStream fs)
@@ -417,6 +425,13 @@ namespace UAssetTools
             Name.DeSerialize(fs);
             string sName = PackageReader.NameMap[Name.ComparisonIndex];
             BulkData.DeSerialize(fs);
+        }
+
+        public void Serialize(FileStream fs)
+        {
+            WriteInt32(fs, NumFormats);
+            Name.Serialize(fs);
+            BulkData.Serialize(fs);
         }
     }
 }

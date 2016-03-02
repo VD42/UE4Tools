@@ -136,6 +136,18 @@ namespace UAssetTools
             CompressedFormatData.DeSerialize(fs);
             CompressedDataGuid = ReadGuid(fs);
         }
+
+        public override void Serialize(FileStream fs)
+        {
+            base.Serialize(fs);
+
+            WriteInt32(fs, Something); // ???
+
+            WriteBool(fs, bCooked);
+            CompressionName.Serialize(fs);
+            CompressedFormatData.Serialize(fs);
+            WriteGuid(fs, CompressedDataGuid);
+        }
     }
 
     public class Enum : Object
@@ -170,6 +182,18 @@ namespace UAssetTools
                 throw new Exception("This version not supported!");
             EnumTypeByte = ReadByte(fs);
         }
+
+        public override void Serialize(FileStream fs)
+        {
+            base.Serialize(fs);
+
+            WriteInt64(fs, Something); // ???
+
+            WriteInt32(fs, Count);
+            for (int i = 0; i < Names.Count; i++)
+                Names[i].Serialize(fs);
+            WriteByte(fs, EnumTypeByte);
+        }
     }
 
     public class UserDefinedEnum : Enum
@@ -177,6 +201,11 @@ namespace UAssetTools
         public override void DeSerialize(FileStream fs)
         {
             base.DeSerialize(fs);
+        }
+
+        public override void Serialize(FileStream fs)
+        {
+            base.Serialize(fs);
         }
     }
 
@@ -196,7 +225,7 @@ namespace UAssetTools
         {
             base.DeSerialize(fs);
 
-            Something = ReadInt32(fs);
+            Something = ReadInt32(fs); // ???
 
             // ???
             /*
@@ -222,6 +251,20 @@ namespace UAssetTools
                 StructProperty RowData = new StructProperty();
                 RowData.DeSerialize(fs);
                 RowMap.Add(new KeyValuePair<Name, StructProperty>(RowName, RowData));
+            }
+        }
+
+        public override void Serialize(FileStream fs)
+        {
+            base.Serialize(fs);
+
+            WriteInt32(fs, Something); // ???
+
+            WriteInt32(fs, RowMap.Count);
+            for (int i = 0; i < NumRows; i++)
+            {
+                RowMap[i].Key.Serialize(fs);
+                RowMap[i].Value.Serialize(fs);
             }
         }
     }

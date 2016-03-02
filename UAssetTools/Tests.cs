@@ -39,12 +39,6 @@ namespace UAssetTools
         }
 
         [TestMethod]
-        public void TestDataTable()
-        {
-            Assert.IsTrue(OpenSave("..\\..\\Tests\\DataTable_1.uasset"));
-        }
-
-        [TestMethod]
         public void TestSoundWave()
         {
             Assert.IsTrue(OpenSave("..\\..\\Tests\\SoundWave_1.uasset"));
@@ -54,6 +48,12 @@ namespace UAssetTools
         public void TestUserDefinedEnum()
         {
             Assert.IsTrue(OpenSave("..\\..\\Tests\\UserDefinedEnum_1.uasset"));
+        }
+
+        [TestMethod]
+        public void TestDataTable()
+        {
+            Assert.IsTrue(OpenSave("..\\..\\Tests\\DataTable_1.uasset"));
         }
     }
 }

@@ -21,6 +21,7 @@ namespace UAssetTools
         public Int64 AssetRegistryDataOffset;
 
         public static List<KeyValuePair<string, string>> Texts;
+        public static List<KeyValuePair<string, string>> TextsToReplace;
 
         public PackageReader()
         {
@@ -30,6 +31,7 @@ namespace UAssetTools
             ExportMap = new List<ObjectExport>();
 
             Texts = new List<KeyValuePair<string, string>>();
+            TextsToReplace = new List<KeyValuePair<string, string>>();
         }
 
         public void OpenPackageFile(string filename)
@@ -210,12 +212,15 @@ namespace UAssetTools
                             case "Texture2D":
                                 ((Texture2D)ExportMap[i].Object).Serialize(fs);
                                 break;
-                            /*case "SoundWave":
+                            case "SoundWave":
                                 ((SoundWave)ExportMap[i].Object).Serialize(fs);
                                 break;
                             case "UserDefinedEnum":
                                 ((UserDefinedEnum)ExportMap[i].Object).Serialize(fs);
-                                break;*/
+                                break;
+                            case "DataTable":
+                                ((DataTable)ExportMap[i].Object).Serialize(fs);
+                                break;
                             default:
                                 throw new Exception("Unknown object name!");
                         }
