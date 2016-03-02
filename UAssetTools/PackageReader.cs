@@ -144,10 +144,10 @@ namespace UAssetTools
                                 ExportMap[i].Object = new DataTable();
                                 ((DataTable)ExportMap[i].Object).DeSerialize(fs);
                                 break;
-                            //case "Function":
-                            //    ExportMap[i].Object = new Function();
-                            //    ((Function)ExportMap[i].Object).DeSerialize(fs);
-                            //    break;
+                            case "Function": // script currently not parsed
+                                ExportMap[i].Object = new Function();
+                                ((Function)ExportMap[i].Object).DeSerialize(fs);
+                                break;
                             default:
                                 if (!bEnableSoftMode)
                                     throw new Exception("Unknown object name!");
@@ -170,6 +170,11 @@ namespace UAssetTools
                         throw new Exception("Bad read!");
                     ExportMap[i].TailSomething = new byte[ExportMap[i].SerialOffset + ExportMap[i].SerialSize - fs.Position];
                     fs.Read(ExportMap[i].TailSomething, 0, ExportMap[i].TailSomething.Length);
+                }
+                else if (fs.Position > ExportMap[i].SerialOffset + ExportMap[i].SerialSize)
+                {
+                    if (!bEnableSoftMode)
+                        throw new Exception("Realy bad read!!!");
                 }
             }
         }
@@ -277,6 +282,9 @@ namespace UAssetTools
                                 break;
                             case "DataTable":
                                 ((DataTable)ExportMap[i].Object).Serialize(fs);
+                                break;
+                            case "Function":
+                                ((Function)ExportMap[i].Object).Serialize(fs);
                                 break;
                             default:
                                 if (!bEnableSoftMode)

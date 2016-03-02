@@ -5,6 +5,8 @@ namespace Helpers
 {
     public class BinaryHelper
     {
+        public static bool bUseUnicode = false;
+
         public Int32 ReadInt32(FileStream fs)
         {
             byte[] buf = new byte[4];
@@ -15,7 +17,7 @@ namespace Helpers
         public string ReadString(FileStream fs)
         {
             int nLength = ReadInt32(fs);
-            if (nLength > 0)
+            if (nLength > 0 && !bUseUnicode)
             {
                 byte[] buf = new byte[nLength];
                 fs.Read(buf, 0, nLength);
@@ -101,12 +103,19 @@ namespace Helpers
                 return;
             }
             bool bNeedUnicode = false;
-            for (int i = 0; i < Value.Length; i++)
+            if (bUseUnicode)
             {
-                if (!('\u0000' <= Value[i] && Value[i] <= '\u00FF'))
+                bNeedUnicode = true;
+            }
+            else
+            {
+                for (int i = 0; i < Value.Length; i++)
                 {
-                    bNeedUnicode = true;
-                    break;
+                    if (!('\u0000' <= Value[i] && Value[i] <= '\u00FF'))
+                    {
+                        bNeedUnicode = true;
+                        break;
+                    }
                 }
             }
             if (bNeedUnicode)

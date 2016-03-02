@@ -282,22 +282,92 @@ namespace UAssetTools
         }
     }
 
-    public class Function : Object
+    public class Field : Object
     {
-        //public Int32 Something; // ???
+        public Int32 Something; // ???
 
-        public UInt32 FunctionFlags;
+        public Int32 Next;
 
         public override void DeSerialize(FileStream fs)
         {
             base.DeSerialize(fs);
 
-            //WriteInt32(fs, Something); // ???
+            Something = ReadInt32(fs); // ???
+
+            Next = ReadInt32(fs);
+        }
+
+        public override void Serialize(FileStream fs)
+        {
+            base.Serialize(fs);
+
+            WriteInt32(fs, Something); // ???
+
+            WriteInt32(fs, Next);
+        }
+    }
+
+    public class Struct : Field
+    {
+        public Int32 SuperStruct;
+        public Int32 Children;
+        public Int32 BytecodeBufferSize;
+        public Int32 SerializedScriptSize;
+        public byte[] SerializedScript;
+
+        public override void DeSerialize(FileStream fs)
+        {
+            base.DeSerialize(fs);
+            SuperStruct = ReadInt32(fs);
+            Children = ReadInt32(fs);
+            BytecodeBufferSize = ReadInt32(fs);
+            SerializedScriptSize = ReadInt32(fs);
+
+            // may be changed in future
+            SerializedScript = new byte[SerializedScriptSize];
+            fs.Read(SerializedScript, 0, SerializedScript.Length);
+        }
+
+        public override void Serialize(FileStream fs)
+        {
+            base.Serialize(fs);
+
+            WriteInt32(fs, SuperStruct);
+            WriteInt32(fs, Children);
+
+            // may be changed in future
+            WriteInt32(fs, BytecodeBufferSize);
+            WriteInt32(fs, SerializedScriptSize);
+            fs.Write(SerializedScript, 0, SerializedScript.Length);
+        }
+    }
+
+    public class Function : Struct
+    {
+        public UInt32 FunctionFlags;
+        public Int32 EventGraphFunction;
+        public Int32 EventGraphCallOffset;
+
+        public override void DeSerialize(FileStream fs)
+        {
+            base.DeSerialize(fs);
 
             FunctionFlags = ReadUInt32(fs);
-            if ((FunctionFlags & 0x00000040) == 0x00000040)
+            if ((FunctionFlags & 0x00000040) == FunctionFlags)
                 throw new Exception("This flag not supported!");
+            if (FileSummary.FileVersionUE4 < 451)
+                throw new Exception("This version not supported!");
+            EventGraphFunction = ReadInt32(fs);
+            EventGraphCallOffset = ReadInt32(fs);
+        }
 
+        public override void Serialize(FileStream fs)
+        {
+            base.Serialize(fs);
+
+            WriteUInt32(fs, FunctionFlags);
+            WriteInt32(fs, EventGraphFunction);
+            WriteInt32(fs, EventGraphCallOffset);
         }
     }
 }
