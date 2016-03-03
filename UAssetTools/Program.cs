@@ -173,7 +173,7 @@ namespace UAssetTools
             if (args.Length != 3)
             {
                 Console.WriteLine("UAssetTools.exe extract_texts <game_path> <path_to_texts_file>");
-                Console.WriteLine("UAssetTools.exe replace_texts <game_path> <path_to_texts_file>");
+                //Console.WriteLine("UAssetTools.exe replace_texts <game_path> <path_to_texts_file>");
                 Console.WriteLine("UAssetTools.exe extract_textures <game_path> <path_to_extracted_textures>");
                 return;
             }
@@ -214,6 +214,7 @@ namespace UAssetTools
                 case "replace_texts":
                     // replace_texts "C:\Program Files (x86)\Steam\SteamApps\common\The Park" "C:\Program Files (x86)\Steam\SteamApps\common\The Park\Workspace\texts_rus.txt"
                     {
+                        Console.WriteLine("This method for text localization is deprecated! See about .locres-file!");
                         List<TextInfo> Texts = ReadTexts(args[2]);
                         for (int i = 0; i < Texts.Count; i++)
                         {
