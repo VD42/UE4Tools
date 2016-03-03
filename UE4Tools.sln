@@ -9,6 +9,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PakTools", "PakTools\PakToo
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Helpers", "Helpers\Helpers.csproj", "{13F60B6A-37B7-40E2-A578-E73ADAC788C8}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LocResTools", "LocResTools\LocResTools.csproj", "{8A462430-6AA6-4698-84A0-952020630D69}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +29,10 @@ Global
 		{13F60B6A-37B7-40E2-A578-E73ADAC788C8}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{13F60B6A-37B7-40E2-A578-E73ADAC788C8}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{13F60B6A-37B7-40E2-A578-E73ADAC788C8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8A462430-6AA6-4698-84A0-952020630D69}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8A462430-6AA6-4698-84A0-952020630D69}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8A462430-6AA6-4698-84A0-952020630D69}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8A462430-6AA6-4698-84A0-952020630D69}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

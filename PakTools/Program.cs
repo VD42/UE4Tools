@@ -15,6 +15,8 @@ namespace PakTools
                 return;
             }
 
+            // unpack "C:\Program Files (x86)\Steam\SteamApps\common\The Park\AtlanticIslandPark\Content\Paks\AtlanticIslandPark-WindowsNoEditor.pak.bak" "C:\Program Files (x86)\Steam\SteamApps\common\The Park"
+
             FileStream fs = new FileStream(args[1], FileMode.Open);
             OutPath = args[2];
             PakFile pack = new PakFile();
