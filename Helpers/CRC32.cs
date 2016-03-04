@@ -47,31 +47,25 @@ namespace Helpers
 
         public static UInt32 StrCrc32_Unicode(string String)
         {
-            byte[] str_buf = Encoding.Unicode.GetBytes(String);
-            byte[] buf = new byte[str_buf.Length + 2];
-            for (int i = 0; i < str_buf.Length; i++)
-                buf[i] = str_buf[i];
+            byte[] buf = Encoding.Unicode.GetBytes(String);
             UInt32 CRC = 0;
             CRC = ~CRC;
-            for (int i = 0; i < str_buf.Length / 2; i++)
+            for (int i = 0; i < buf.Length / 2; i++)
             {
                 CRC = (CRC >> 8) ^ CRCTablesSB8[(CRC ^ buf[i * 2 + 0]) & 0xFF];
                 CRC = (CRC >> 8) ^ CRCTablesSB8[(CRC ^ buf[i * 2 + 1]) & 0xFF];
-                CRC = (CRC >> 8) ^ CRCTablesSB8[(CRC ^ buf[i * 2 + 2]) & 0xFF];
-                CRC = (CRC >> 8) ^ CRCTablesSB8[(CRC ^ buf[i * 2 + 3]) & 0xFF];
+                CRC = (CRC >> 8) ^ CRCTablesSB8[(CRC                 ) & 0xFF];
+                CRC = (CRC >> 8) ^ CRCTablesSB8[(CRC                 ) & 0xFF];
             }
             return ~CRC;
         }
 
         public static UInt32 StrCrc32_ASCII(string String)
         {
-            byte[] str_buf = Encoding.ASCII.GetBytes(String);
-            byte[] buf = new byte[str_buf.Length + 1];
-            for (int i = 0; i < str_buf.Length; i++)
-                buf[i] = str_buf[i];
+            byte[] buf = Encoding.ASCII.GetBytes(String);
             UInt32 CRC = 0;
             CRC = ~CRC;
-            for (int i = 0; i < str_buf.Length; i++)
+            for (int i = 0; i < buf.Length; i++)
             {
                 CRC = (CRC >> 8) ^ CRCTablesSB8[(CRC ^ buf[i]) & 0xFF];
                 CRC = (CRC >> 8) ^ CRCTablesSB8[(CRC         ) & 0xFF];

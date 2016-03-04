@@ -352,6 +352,17 @@ namespace UAssetTools
                                 Console.WriteLine("Cannot read file, reason: " + ex.Message);
                             }
                         }
+                        for (int i = 0; i < Texts.Count; i++)
+                        {
+                            for (int j = i + 1; j < Texts.Count; j++)
+                            {
+                                if (Texts[i].Key == Texts[j].Key)
+                                {
+                                    Texts.RemoveAt(j);
+                                    j--;
+                                }
+                            }
+                        }
                         StreamWriter sw = new StreamWriter(args[2]);
                         sw.WriteLine("=>{}");
                         sw.WriteLine();
@@ -453,6 +464,17 @@ namespace UAssetTools
                             catch (Exception ex)
                             {
                                 Console.WriteLine("Cannot read file, reason: " + ex.Message);
+                            }
+                        }
+                        for (int i = 0; i < Texts.Count; i++)
+                        {
+                            for (int j = i + 1; j < Texts.Count; j++)
+                            {
+                                if (Texts[i].Key == Texts[j].Key)
+                                {
+                                    Texts.RemoveAt(j);
+                                    j--;
+                                }
                             }
                         }
                         StreamWriter sw = new StreamWriter(args[2]);
