@@ -665,7 +665,7 @@ namespace UAssetTools
                             if (Hash == Pictures[i].Hash)
                             {
                                 Console.WriteLine("Not changed, skip.");
-                                //continue;
+                                continue;
                             }
                             PackageReader asset = new PackageReader();
                             asset.OpenPackageFile(Path.Combine(args[1], Pictures[i].File));
@@ -703,7 +703,7 @@ namespace UAssetTools
                                     if (nCurrentVersion != nVersion)
                                         throw new Exception("Bad conversion!");
                                     byte[] BulkData = new byte[ms.Length - 124];
-                                    ms.Seek(124, SeekOrigin.Begin);
+                                    ms.Seek(125, SeekOrigin.Begin);
                                     ms.Read(BulkData, 0, BulkData.Length);
                                     texture.Data.Mips[j].BulkData.BulkData = BulkData;
                                 }
