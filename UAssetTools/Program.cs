@@ -665,7 +665,7 @@ namespace UAssetTools
                             if (Hash == Pictures[i].Hash)
                             {
                                 Console.WriteLine("Not changed, skip.");
-                                continue;
+                                //continue;
                             }
                             PackageReader asset = new PackageReader();
                             asset.OpenPackageFile(Path.Combine(args[1], Pictures[i].File));
@@ -692,8 +692,12 @@ namespace UAssetTools
                                         image.Resize(1, 1);
                                         image.Resize(4, 4);
                                     }
+                                    else
+                                    {
+                                        image.Resize(nWidth, nHeight);
+                                    }
                                     MemoryStream ms = new MemoryStream();
-                                    image.Write(ms, ImageMagick.MagickFormat.Dds);
+                                    image.Write(ms, ImageMagick.MagickFormat.Dds); // so sad, ImageMagic has bug here :(
                                     ms.Seek(87, SeekOrigin.Begin);
                                     int nCurrentVersion = ms.ReadByte() - 0x30;
                                     if (nCurrentVersion != nVersion)
@@ -701,7 +705,6 @@ namespace UAssetTools
                                     byte[] BulkData = new byte[ms.Length - 124];
                                     ms.Seek(124, SeekOrigin.Begin);
                                     ms.Read(BulkData, 0, BulkData.Length);
-                                    image.Write(Path.Combine(args[2], Pictures[i].Index + " - " + Path.GetFileNameWithoutExtension(Pictures[i].File) + ".dds")); // so sad, ImageMagic has bug here :(
                                     texture.Data.Mips[j].BulkData.BulkData = BulkData;
                                 }
                             }
