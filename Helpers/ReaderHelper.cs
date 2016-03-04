@@ -19,6 +19,8 @@ namespace Helpers
             int nLength = ReadInt32(fs);
             if (nLength > 0 && !bUseUnicode)
             {
+                if (nLength > 10000)
+                    throw new Exception("Probably bad read!");
                 byte[] buf = new byte[nLength];
                 fs.Read(buf, 0, nLength);
                 return System.Text.Encoding.ASCII.GetString(buf, 0, nLength - 1);
@@ -26,6 +28,8 @@ namespace Helpers
             else if (nLength < 0)
             {
                 nLength = -nLength * 2;
+                if (nLength > 20000)
+                    throw new Exception("Probably bad read!");
                 byte[] buf = new byte[nLength];
                 fs.Read(buf, 0, nLength);
                 return System.Text.Encoding.Unicode.GetString(buf, 0, nLength - 2);

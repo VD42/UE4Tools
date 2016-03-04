@@ -5,6 +5,27 @@ using System.IO;
 
 namespace UAssetTools
 {
+    public class GuidCustomVersion_DEPRECATED : BinaryHelper
+    {
+        public Guid Key;
+        public Int32 Version;
+        public string FriendlyName;
+
+        public void DeSerialize(FileStream fs)
+        {
+            Key = ReadGuid(fs);
+            Version = ReadInt32(fs);
+            FriendlyName = ReadString(fs);
+        }
+
+        public void Serialize(FileStream fs)
+        {
+            WriteGuid(fs, Key);
+            WriteInt32(fs, Version);
+            WriteString(fs, FriendlyName);
+        }
+    }
+
     public class FileSummary : BinaryHelper
     {
         public Int32 Tag;
@@ -12,6 +33,7 @@ namespace UAssetTools
         public Int32 LegacyUE3Version;
         public static Int32 FileVersionUE4;
         public Int32 FileVersionLicenseeUE4;
+        public List<GuidCustomVersion_DEPRECATED> VersionArray;
         public Int32 TotalHeaderSize;
         public string FolderName;
         public UInt32 PackageFlags;
@@ -51,6 +73,7 @@ namespace UAssetTools
 
         public FileSummary()
         {
+            VersionArray = new List<GuidCustomVersion_DEPRECATED>();
             Generations = new List<GenerationInfo>();
             SavedByEngineVersion = new EngineVersion();
             CompatibleWithEngineVersion = new EngineVersion();
@@ -72,8 +95,11 @@ namespace UAssetTools
             FileVersionUE4 = ReadInt32(fs);
             FileVersionLicenseeUE4 = ReadInt32(fs);
             int nVersionsCount = ReadInt32(fs);
-            if (nVersionsCount > 0)
-                throw new Exception("Versions array not supported!");
+            for (int i = 0; i < nVersionsCount; i++)
+            {
+                VersionArray.Add(new GuidCustomVersion_DEPRECATED());
+                VersionArray[i].DeSerialize(fs);
+            }
             TotalHeaderSize = ReadInt32(fs);
             FolderName = ReadString(fs);
             PackageFlags = ReadUInt32(fs);
@@ -140,7 +166,9 @@ namespace UAssetTools
             WriteInt32(fs, LegacyUE3Version);
             WriteInt32(fs, FileVersionUE4);
             WriteInt32(fs, FileVersionLicenseeUE4);
-            WriteInt32(fs, 0); // nVersionsCount
+            WriteInt32(fs, VersionArray.Count);
+            for (int i = 0; i < VersionArray.Count; i++)
+                VersionArray[i].Serialize(fs);
             TotalHeaderSizeOffset = fs.Position; WriteInt32(fs, 0); // POST: TotalHeaderSize
             WriteString(fs, FolderName);
             WriteUInt32(fs, PackageFlags);

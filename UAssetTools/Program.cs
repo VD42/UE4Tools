@@ -7,13 +7,17 @@ namespace UAssetTools
     public class TextInfo
     {
         public string File;
+        public string Namespace;
         public string Key;
+        public UInt32 Hash;
         public string Text;
 
-        public TextInfo(string file, string key, string text)
+        public TextInfo(string file, string ns, string key, UInt32 hash, string text)
         {
             File = file;
+            Namespace = ns;
             Key = key;
+            Hash = hash;
             Text = text;
         }
     }
@@ -39,7 +43,7 @@ namespace UAssetTools
             string[] current_files = System.IO.Directory.GetFiles(path);
             for (int i = 0; i < current_files.Length; i++)
             {
-                if (Path.GetExtension(current_files[i]) != ".uasset")
+                if (Path.GetExtension(current_files[i]) != ".uasset" && Path.GetExtension(current_files[i]) != ".umap")
                     continue;
                 files.Add(current_files[i]);
             }
@@ -62,13 +66,36 @@ namespace UAssetTools
                 line = line.Substring(line.IndexOf('[') + 1);
                 string key = line.Substring(0, line.IndexOf(']'));
                 string text = sr.ReadLine();
-                Texts.Add(new TextInfo(file, key, text));
+                Texts.Add(new TextInfo(file, "", key, 0, text));
             }
             sr.Close();
             return Texts;
         }
 
-        static void WriteDDSHeader(FileStream fs, int nWidth, int nHeight, int nVersion)
+        public static List<PictureInfo> ReadPictures(string filename)
+        {
+            List<PictureInfo> Pictures = new List<PictureInfo>();
+            StreamReader sr = new StreamReader(filename);
+            while (!sr.EndOfStream)
+            {
+                string line = sr.ReadLine();
+                if (line.Trim() == "")
+                    continue;
+                line = line.Substring(line.IndexOf('[') + 1);
+                string index = line.Substring(0, line.IndexOf(']'));
+                line = line.Substring(line.IndexOf('[') + 1);
+                string file = line.Substring(0, line.IndexOf(']'));
+                line = line.Substring(line.IndexOf('[') + 1);
+                string hash = line.Substring(0, line.IndexOf(']'));
+                if (Int32.Parse(index) != Pictures.Count + 1)
+                    throw new Exception("Bad index!");
+                Pictures.Add(new PictureInfo(file, hash));
+            }
+            sr.Close();
+            return Pictures;
+        }
+
+        static void WriteDDSHeader(Stream fs, int nWidth, int nHeight, int nVersion)
         {
             byte[] header = new byte[128];
 
@@ -106,7 +133,45 @@ namespace UAssetTools
             fs.Write(header, 0, header.Length);
         }
 
-        static void WriteDDSHeaderBGRA(FileStream fs, int nWidth, int nHeight)
+        static void WriteDDSHeaderATI2(Stream fs, int nWidth, int nHeight)
+        {
+            byte[] header = new byte[128];
+
+            header[0] = 0x44;
+            header[1] = 0x44;
+            header[2] = 0x53;
+            header[3] = 0x20;
+
+            header[4] = 0x7C;
+
+            header[8] = 0x07;
+            header[9] = 0x10;
+
+            header[12] = (byte)(nHeight & 0xFF);
+            header[13] = (byte)((nHeight >> 8) & 0xFF);
+            header[14] = (byte)((nHeight >> 16) & 0xFF);
+            header[15] = (byte)((nHeight >> 24) & 0xFF);
+
+            header[16] = (byte)(nWidth & 0xFF);
+            header[17] = (byte)((nWidth >> 8) & 0xFF);
+            header[18] = (byte)((nWidth >> 16) & 0xFF);
+            header[19] = (byte)((nWidth >> 24) & 0xFF);
+
+            header[76] = 0x20;
+
+            header[80] = 0x04;
+
+            header[84] = 0x41;
+            header[85] = 0x54;
+            header[86] = 0x49;
+            header[87] = 0x32;
+
+            header[109] = 0x10;
+
+            fs.Write(header, 0, header.Length);
+        }
+
+        static void WriteDDSHeaderBGRA(Stream fs, int nWidth, int nHeight)
         {
             byte[] header = new byte[128];
 
@@ -168,6 +233,68 @@ namespace UAssetTools
             fs.Write(header, 0, header.Length);
         }
 
+        static void WriteDDSHeaderG8(Stream fs, int nWidth, int nHeight)
+        {
+            byte[] header = new byte[128];
+
+            header[0] = 0x44;
+            header[1] = 0x44;
+            header[2] = 0x53;
+            header[3] = 0x20;
+
+            header[4] = 0x7C;
+
+            header[8] = 0x07;
+            header[9] = 0x10;
+
+            header[12] = (byte)(nHeight & 0xFF);
+            header[13] = (byte)((nHeight >> 8) & 0xFF);
+            header[14] = (byte)((nHeight >> 16) & 0xFF);
+            header[15] = (byte)((nHeight >> 24) & 0xFF);
+
+            header[16] = (byte)(nWidth & 0xFF);
+            header[17] = (byte)((nWidth >> 8) & 0xFF);
+            header[18] = (byte)((nWidth >> 16) & 0xFF);
+            header[19] = (byte)((nWidth >> 24) & 0xFF);
+
+            header[76] = 0x20;
+
+            header[80] = 0x42;
+
+            header[88] = 0x08;
+            header[89] = 0x00;
+            header[90] = 0x00;
+            header[91] = 0x00;
+
+            // R
+            header[92] = 0x00;
+            header[93] = 0x00;
+            header[94] = 0x00;
+            header[95] = 0x00;
+
+            // G
+            header[96] = 0x00;
+            header[97] = 0x00;
+            header[98] = 0x00;
+            header[99] = 0xFF;
+
+            // B
+            header[100] = 0x00;
+            header[101] = 0x00;
+            header[102] = 0x00;
+            header[103] = 0x00;
+
+            // A
+            header[104] = 0x00;
+            header[105] = 0x00;
+            header[106] = 0x00;
+            header[107] = 0x00;
+
+            header[109] = 0x10;
+
+            fs.Write(header, 0, header.Length);
+        }
+
         static void Main(string[] args)
         {
             if (args.Length != 3)
@@ -192,9 +319,16 @@ namespace UAssetTools
                             PackageReader asset = new PackageReader();
                             try
                             {
+                                PackageReader.bEnableSoftMode = true;
                                 asset.OpenPackageFile(files[i]);
+                                PackageReader.bEnableSoftMode = false;
                                 for (int j = 0; j < PackageReader.Texts.Count; j++)
-                                    Texts.Add(new TextInfo(files[i], PackageReader.Texts[j].Key, PackageReader.Texts[j].Value));
+                                {
+                                    Texts.Add(PackageReader.Texts[j]);
+                                    if (Texts[Texts.Count - 1].Namespace != "")
+                                        throw new Exception("Only empty supported!");
+                                    Texts[Texts.Count - 1].File = files[i];
+                                }
                             }
                             catch (Exception ex)
                             {
@@ -202,12 +336,15 @@ namespace UAssetTools
                             }
                         }
                         StreamWriter sw = new StreamWriter(args[2]);
+                        sw.WriteLine("=>{}");
+                        sw.WriteLine();
                         for (int i = 0; i < Texts.Count; i++)
                         {
-                            sw.WriteLine("[" + Texts[i].File.Replace(args[1] + "\\", "") + "][" + Texts[i].Key + "]");
+                            sw.WriteLine("=>[" + Texts[i].Key + "][" + Texts[i].Hash + "]");
                             sw.WriteLine(Texts[i].Text);
                             sw.WriteLine();
                         }
+                        sw.WriteLine("=>{[END]}");
                         sw.Close();
                     }
                     break;
@@ -224,6 +361,94 @@ namespace UAssetTools
                             asset.OpenPackageFile(Path.Combine(args[1], Texts[i].File));
                             asset.SavePackageFile(Path.Combine(args[1], Texts[i].File));
                         }
+                    }
+                    break;
+                case "bruteforce_texts":
+                    // bruteforce_texts "C:\Program Files (x86)\Steam\SteamApps\common\The Park" "C:\Program Files (x86)\Steam\SteamApps\common\The Park\Workspace\texts.txt"
+                    {
+                        List<String> files = new List<string>();
+                        GetFiles(args[1], ref files);
+                        List<TextInfo> Texts = new List<TextInfo>();
+                        for (int i = 0; i < files.Count; i++)
+                        {
+                            Console.WriteLine("[" + (i + 1) + " of " + files.Count + "] " + files[i]);
+                            PackageReader asset = new PackageReader();
+                            try
+                            {
+                                FileStream fs = new FileStream(files[i], FileMode.Open);
+                                asset.PackageFileSummary.DeSerialize(fs);
+                                asset.DeSerializeNameMap(fs);
+                                asset.DeSerializeExportMap(fs);
+
+                                bool bFoundTextProperty = false;
+                                byte[] TextPropertySignature = new byte[8];
+                                for (int j = 0; j < PackageReader.NameMap.Count; j++)
+                                {
+                                    if (PackageReader.NameMap[j] == "TextProperty")
+                                    {
+                                        byte[] TextPropertySignaturePart = BitConverter.GetBytes(j);
+                                        for (int k = 0; k < TextPropertySignaturePart.Length; k++)
+                                            TextPropertySignature[k] = TextPropertySignaturePart[k];
+                                        bFoundTextProperty = true;
+                                        break;
+                                    }
+                                }
+
+                                if (!bFoundTextProperty)
+                                {
+                                    fs.Close();
+                                    continue;
+                                }
+
+                                for (int j = 0; j < asset.ExportMap.Count; j++)
+                                {
+                                    fs.Seek(asset.ExportMap[j].SerialOffset, SeekOrigin.Begin);
+                                    for (int k = 0; k < asset.ExportMap[j].SerialSize - 7; k++)
+                                    {
+                                        fs.Seek(asset.ExportMap[j].SerialOffset + k, SeekOrigin.Begin);
+                                        byte[] Test = new byte[8];
+                                        fs.Read(Test, 0, 8);
+                                        if (!System.Collections.StructuralComparisons.StructuralEqualityComparer.Equals(Test, TextPropertySignature))
+                                            continue;
+                                        try
+                                        {
+                                            fs.Seek(8, SeekOrigin.Current);
+                                            Text t = new Text();
+                                            t.DeSerialize(fs);
+                                        }
+                                        catch (Exception ex)
+                                        {
+                                            Console.WriteLine("Cannot read file, reason: " + ex.Message);
+                                        }
+                                    }
+                                }
+
+                                fs.Close();
+
+                                for (int j = 0; j < PackageReader.Texts.Count; j++)
+                                {
+                                    Texts.Add(PackageReader.Texts[j]);
+                                    if (Texts[Texts.Count - 1].Namespace != "")
+                                        throw new Exception("Only empty supported!");
+                                    Texts[Texts.Count - 1].File = files[i];
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                Console.WriteLine("Cannot read file, reason: " + ex.Message);
+                            }
+                        }
+                        StreamWriter sw = new StreamWriter(args[2]);
+                        sw.WriteLine("=>{}");
+                        sw.WriteLine();
+                        for (int i = 0; i < Texts.Count; i++)
+                        {
+                            sw.WriteLine("=>[" + Texts[i].Key + "][" + Texts[i].Hash + "]");
+                            sw.WriteLine(Texts[i].Text);
+                            sw.WriteLine();
+                        }
+                        sw.WriteLine("=>{[END]}");
+                        sw.Close();
                     }
                     break;
                 case "extract_textures":
@@ -282,7 +507,7 @@ namespace UAssetTools
                         StreamWriter sw = new StreamWriter(Path.Combine(args[2], "_textures.txt"));
                         for (int i = 0; i < Pictures.Count; i++)
                         {
-                            sw.WriteLine("[" + (i + 1) + "][" + Pictures[i].File.Replace(args[1] + "\\", "") + "][" + Pictures[i].Hash + "]");
+                            sw.WriteLine("[" + (i + 1) + "][" + Pictures[i].File.Replace(args[1] + "\\", "") + "]");
                         }
                         sw.Close();
                     }

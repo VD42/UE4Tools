@@ -326,6 +326,58 @@ namespace UAssetTools
             // may be changed in future
             SerializedScript = new byte[SerializedScriptSize];
             fs.Read(SerializedScript, 0, SerializedScript.Length);
+
+            // try find texts
+            try
+            {
+                for (int i = 0; i < SerializedScript.Length; i++)
+                {
+                    if (i < SerializedScript.Length - 1 && SerializedScript[i] == 0x29 && SerializedScript[i + 1] == 0x1F) // seems like Text!
+                    {
+                        int nStringStart = i + 2;
+                        int nStringEnd = i + 2;
+                        for (int j = nStringStart; j < SerializedScript.Length; j++)
+                        {
+                            if (SerializedScript[j] == 0x00)
+                            {
+                                nStringEnd = j;
+                                break;
+                            }
+                        }
+                        int nKeyStart = nStringEnd + 2;
+                        int nKeyEnd = nStringEnd + 2;
+                        for (int j = nKeyStart; j < SerializedScript.Length; j++)
+                        {
+                            if (SerializedScript[j] == 0x00)
+                            {
+                                nKeyEnd = j;
+                                break;
+                            }
+                        }
+                        int nNamespaceStart = nKeyEnd + 2;
+                        int nNamespaceEnd = nKeyEnd + 2;
+                        for (int j = nNamespaceStart; j < SerializedScript.Length; j++)
+                        {
+                            if (SerializedScript[j] == 0x00)
+                            {
+                                nNamespaceEnd = j;
+                                break;
+                            }
+                        }
+                        string sString = System.Text.Encoding.ASCII.GetString(SerializedScript, nStringStart, nStringEnd - nStringStart);
+                        string sKey = System.Text.Encoding.ASCII.GetString(SerializedScript, nKeyStart, nKeyEnd - nKeyStart);
+                        string sNamespace = System.Text.Encoding.ASCII.GetString(SerializedScript, nNamespaceStart, nNamespaceEnd - nNamespaceStart);
+
+                        if (sKey != "")
+                            PackageReader.Texts.Add(new TextInfo("", sNamespace, sKey, CRC32.StrCrc32(sString), sString));
+
+                        i = nNamespaceEnd + 1;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+            }
         }
 
         public override void Serialize(FileStream fs)
@@ -353,7 +405,7 @@ namespace UAssetTools
             base.DeSerialize(fs);
 
             FunctionFlags = ReadUInt32(fs);
-            if ((FunctionFlags & 0x00000040) == FunctionFlags)
+            if ((FunctionFlags & 0x00000040) == 0x00000040)
                 throw new Exception("This flag not supported!");
             if (FileSummary.FileVersionUE4 < 451)
                 throw new Exception("This version not supported!");

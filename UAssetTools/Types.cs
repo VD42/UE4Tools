@@ -232,9 +232,9 @@ namespace UAssetTools
                 SourceStringRaw = "";
             }
 
-            if (Key != "")
+            if (Key != "" && SourceStringRaw != "")
             {
-                PackageReader.Texts.Add(new KeyValuePair<string, string>(Key, SourceStringRaw));
+                PackageReader.Texts.Add(new TextInfo("", Namespace, Key, CRC32.StrCrc32(SourceStringRaw), SourceStringRaw));
                 for (int i = 0; i < PackageReader.TextsToReplace.Count; i++)
                 {
                     if (PackageReader.TextsToReplace[i].Key == Key)

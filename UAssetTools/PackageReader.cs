@@ -21,7 +21,7 @@ namespace UAssetTools
         public Int64 DependsOffset;
         public Int64 AssetRegistryDataOffset;
 
-        public static List<KeyValuePair<string, string>> Texts;
+        public static List<TextInfo> Texts;
         public static List<KeyValuePair<string, string>> TextsToReplace;
 
         public static bool bEnableSoftMode;
@@ -34,7 +34,7 @@ namespace UAssetTools
             ExportMap = new List<ObjectExport>();
             DependsMap = new List<List<Int32>>();
 
-            Texts = new List<KeyValuePair<string, string>>();
+            Texts = new List<TextInfo>();
             TextsToReplace = new List<KeyValuePair<string, string>>();
 
             bEnableSoftMode = false;
