@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.IO;
 
 namespace UAssetTools
 {
@@ -13,7 +14,7 @@ namespace UAssetTools
         public bool OpenSave(string file_in, bool bSoftMode = false)
         {
             bool bResult = false;
-            string file_out = System.IO.Path.GetTempFileName();
+            string file_out = Path.GetTempFileName();
             try
             {
                 PackageReader pr = new PackageReader();
@@ -21,8 +22,8 @@ namespace UAssetTools
                     PackageReader.bEnableSoftMode = true;
                 pr.OpenPackageFile(file_in);
                 pr.SavePackageFile(file_out);
-                byte[] file_in_content = System.IO.File.ReadAllBytes(file_in);
-                byte[] file_out_content = System.IO.File.ReadAllBytes(file_out);
+                byte[] file_in_content = File.ReadAllBytes(file_in);
+                byte[] file_out_content = File.ReadAllBytes(file_out);
                 if (System.Collections.StructuralComparisons.StructuralEqualityComparer.Equals(file_in_content, file_out_content))
                     bResult = true;
             }
@@ -30,7 +31,7 @@ namespace UAssetTools
             {
                 Assert.Fail(ex.Message);
             }
-            System.IO.File.Delete(file_out);
+            File.Delete(file_out);
             return bResult;
         }
 

@@ -110,10 +110,10 @@ namespace PakTools
         public void CreatePath(string FilePath)
         {
             string DirPath = Path.GetDirectoryName(FilePath);
-            if (!System.IO.Directory.Exists(DirPath))
+            if (!Directory.Exists(DirPath))
             {
                 CreatePath(DirPath);
-                System.IO.Directory.CreateDirectory(DirPath);
+                Directory.CreateDirectory(DirPath);
             }
         }
 

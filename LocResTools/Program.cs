@@ -54,8 +54,9 @@ namespace LocResTools
             //return;
             if (args.Length != 3)
             {
-                Console.WriteLine("LocResTools.exe unpack <path_to_locres> <output_file>");
-                Console.WriteLine("LocResTools.exe pack <path_to_locres> <input_file>");
+                Console.WriteLine("LocResTools.exe unpack <path_to_locres> <output_file_with_texts>");
+                Console.WriteLine("LocResTools.exe pack <path_to_locres> <input_file_with_texts>");
+                Console.WriteLine("LocResTools.exe repack_old <file_with_texts_new_format> <file_with_texts_old_format>");
                 return;
             }
 

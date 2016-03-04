@@ -24,11 +24,13 @@ namespace UAssetTools
 
     public class PictureInfo
     {
+        public int Index;
         public string File;
         public string Hash;
 
-        public PictureInfo(string file, string hash)
+        public PictureInfo(int index, string file, string hash)
         {
+            Index = index;
             File = file;
             Hash = hash;
         }
@@ -40,14 +42,14 @@ namespace UAssetTools
         {
             if (Path.GetFileName(path) == ".git")
                 return;
-            string[] current_files = System.IO.Directory.GetFiles(path);
+            string[] current_files = Directory.GetFiles(path);
             for (int i = 0; i < current_files.Length; i++)
             {
                 if (Path.GetExtension(current_files[i]) != ".uasset" && Path.GetExtension(current_files[i]) != ".umap")
                     continue;
                 files.Add(current_files[i]);
             }
-            string[] current_dirs = System.IO.Directory.GetDirectories(path);
+            string[] current_dirs = Directory.GetDirectories(path);
             for (int i = 0; i < current_dirs.Length; i++)
                 GetFiles(current_dirs[i], ref files);
         }
@@ -82,14 +84,16 @@ namespace UAssetTools
                 if (line.Trim() == "")
                     continue;
                 line = line.Substring(line.IndexOf('[') + 1);
-                string index = line.Substring(0, line.IndexOf(']'));
+                int index = int.Parse(line.Substring(0, line.IndexOf(']')));
                 line = line.Substring(line.IndexOf('[') + 1);
                 string file = line.Substring(0, line.IndexOf(']'));
-                line = line.Substring(line.IndexOf('[') + 1);
-                string hash = line.Substring(0, line.IndexOf(']'));
-                if (Int32.Parse(index) != Pictures.Count + 1)
-                    throw new Exception("Bad index!");
-                Pictures.Add(new PictureInfo(file, hash));
+                string hash = "";
+                if (line.IndexOf('[') > -1)
+                {
+                    line = line.Substring(line.IndexOf('[') + 1);
+                    hash = line.Substring(0, line.IndexOf(']'));
+                }
+                Pictures.Add(new PictureInfo(index, file, hash));
             }
             sr.Close();
             return Pictures;
@@ -295,13 +299,26 @@ namespace UAssetTools
             fs.Write(header, 0, header.Length);
         }
 
+        public static void CreatePath(string FilePath)
+        {
+            string DirPath = Path.GetDirectoryName(FilePath);
+            if (!Directory.Exists(DirPath))
+            {
+                CreatePath(DirPath);
+                Directory.CreateDirectory(DirPath);
+            }
+        }
+
         static void Main(string[] args)
         {
             if (args.Length != 3)
             {
                 Console.WriteLine("UAssetTools.exe extract_texts <game_path> <path_to_texts_file>");
                 //Console.WriteLine("UAssetTools.exe replace_texts <game_path> <path_to_texts_file>");
+                Console.WriteLine("UAssetTools.exe bruteforce_texts <game_path> <path_to_texts_file>");
                 Console.WriteLine("UAssetTools.exe extract_textures <game_path> <path_to_extracted_textures>");
+                Console.WriteLine("UAssetTools.exe extract_convert_textures <game_path> <path_to_extracted_and_converted_textures>");
+                Console.WriteLine("UAssetTools.exe restore_textures <game_path> <path_to_extracted_and_converted_textures>");
                 return;
             }
 
@@ -476,22 +493,38 @@ namespace UAssetTools
                                 {
                                     Texture2D texture = (Texture2D)asset.ExportMap[0].Object;
                                     string sPixelFormat = PackageReader.NameMap[texture.PixelFormatName1.ComparisonIndex];
-                                    if (sPixelFormat.Substring(0, 6) == "PF_DXT")
+                                    if (sPixelFormat.Length >= 6 && sPixelFormat.Substring(0, 6) == "PF_DXT")
                                     {
                                         int nVersion = int.Parse(sPixelFormat.Substring(6));
-                                        FileStream fs = new FileStream(Path.Combine(args[2], (Pictures.Count + 1) + " - " + Path.GetFileNameWithoutExtension(files[i])) + ".dds", System.IO.FileMode.Create);
+                                        FileStream fs = new FileStream(Path.Combine(args[2], (Pictures.Count + 1) + " - " + Path.GetFileNameWithoutExtension(files[i]) + ".dds"), FileMode.Create);
                                         WriteDDSHeader(fs, texture.Data.Mips[0].SizeX, texture.Data.Mips[0].SizeY, nVersion);
                                         fs.Write(texture.Data.Mips[0].BulkData.BulkData, 0, texture.Data.Mips[0].BulkData.BulkData.Length);
+                                        Pictures.Add(new PictureInfo(Pictures.Count + 1, files[i], ""));
                                         fs.Close();
-                                        Pictures.Add(new PictureInfo(files[i], ""));
                                     }
                                     else if (sPixelFormat == "PF_B8G8R8A8")
                                     {
-                                        FileStream fs = new FileStream(Path.Combine(args[2], (Pictures.Count + 1) + " - " + Path.GetFileNameWithoutExtension(files[i])) + ".dds", System.IO.FileMode.Create);
+                                        FileStream fs = new FileStream(Path.Combine(args[2], (Pictures.Count + 1) + " - " + Path.GetFileNameWithoutExtension(files[i]) + ".dds"), FileMode.Create);
                                         WriteDDSHeaderBGRA(fs, texture.Data.Mips[0].SizeX, texture.Data.Mips[0].SizeY);
                                         fs.Write(texture.Data.Mips[0].BulkData.BulkData, 0, texture.Data.Mips[0].BulkData.BulkData.Length);
+                                        Pictures.Add(new PictureInfo(Pictures.Count + 1, files[i], ""));
                                         fs.Close();
-                                        Pictures.Add(new PictureInfo(files[i], ""));
+                                    }
+                                    else if (sPixelFormat == "PF_BC5")
+                                    {
+                                        FileStream fs = new FileStream(Path.Combine(args[2], (Pictures.Count + 1) + " - " + Path.GetFileNameWithoutExtension(files[i]) + ".dds"), FileMode.Create);
+                                        WriteDDSHeaderATI2(fs, texture.Data.Mips[0].SizeX, texture.Data.Mips[0].SizeY);
+                                        fs.Write(texture.Data.Mips[0].BulkData.BulkData, 0, texture.Data.Mips[0].BulkData.BulkData.Length);
+                                        Pictures.Add(new PictureInfo(Pictures.Count + 1, files[i], ""));
+                                        fs.Close();
+                                    }
+                                    else if (sPixelFormat == "PF_G8")
+                                    {
+                                        FileStream fs = new FileStream(Path.Combine(args[2], (Pictures.Count + 1) + " - " + Path.GetFileNameWithoutExtension(files[i]) + ".dds"), FileMode.Create);
+                                        WriteDDSHeaderG8(fs, texture.Data.Mips[0].SizeX, texture.Data.Mips[0].SizeY);
+                                        fs.Write(texture.Data.Mips[0].BulkData.BulkData, 0, texture.Data.Mips[0].BulkData.BulkData.Length);
+                                        Pictures.Add(new PictureInfo(Pictures.Count + 1, files[i], ""));
+                                        fs.Close();
                                     }
                                     else
                                     {
@@ -507,9 +540,178 @@ namespace UAssetTools
                         StreamWriter sw = new StreamWriter(Path.Combine(args[2], "_textures.txt"));
                         for (int i = 0; i < Pictures.Count; i++)
                         {
-                            sw.WriteLine("[" + (i + 1) + "][" + Pictures[i].File.Replace(args[1] + "\\", "") + "]");
+                            sw.WriteLine("[" + Pictures[i].Index + "][" + Pictures[i].File.Replace(args[1] + "\\", "") + "]");
                         }
                         sw.Close();
+                    }
+                    break;
+                case "extract_convert_textures":
+                    // extract_convert_textures "C:\Program Files (x86)\Steam\SteamApps\common\The Park" "C:\Program Files (x86)\Steam\SteamApps\common\The Park\Workspace\ConvertedTextures"
+                    {
+                        List<PictureInfo> Pictures = ReadPictures(Path.Combine(args[2], "_textures.txt"));
+                        for (int i = 0; i < Pictures.Count; i++)
+                        {
+                            Console.WriteLine("[" + (i + 1) + " of " + Pictures.Count + "] " + Pictures[i].File);
+                            PackageReader asset = new PackageReader();
+                            try
+                            {
+                                asset.OpenPackageFile(Path.Combine(args[1], Pictures[i].File));
+                                for (int j = 0; j < asset.ExportMap.Count; j++)
+                                {
+                                    if (PackageReader.NameMap[PackageReader.ImportMap[-asset.ExportMap[j].ClassIndex - 1].ObjectName.ComparisonIndex] == "Texture2D")
+                                    {
+                                        if (asset.ExportMap.Count != 1)
+                                            throw new Exception("Only one export supported!");
+                                    }
+                                }
+                                if (asset.ExportMap.Count > 0 && PackageReader.NameMap[PackageReader.ImportMap[-asset.ExportMap[0].ClassIndex - 1].ObjectName.ComparisonIndex] == "Texture2D")
+                                {
+                                    Texture2D texture = (Texture2D)asset.ExportMap[0].Object;
+                                    string sPixelFormat = PackageReader.NameMap[texture.PixelFormatName1.ComparisonIndex];
+                                    if (sPixelFormat.Length >= 6 && sPixelFormat.Substring(0, 6) == "PF_DXT")
+                                    {
+                                        int nVersion = int.Parse(sPixelFormat.Substring(6));
+                                        MemoryStream ms = new MemoryStream();
+                                        WriteDDSHeader(ms, texture.Data.Mips[0].SizeX, texture.Data.Mips[0].SizeY, nVersion);
+                                        ms.Write(texture.Data.Mips[0].BulkData.BulkData, 0, texture.Data.Mips[0].BulkData.BulkData.Length);
+                                        ms.Seek(0, SeekOrigin.Begin);
+                                        ImageMagick.MagickReadSettings settings = new ImageMagick.MagickReadSettings();
+                                        settings.Format = ImageMagick.MagickFormat.Dds;
+                                        ImageMagick.MagickImage image = new ImageMagick.MagickImage(ms, settings);
+                                        FileStream fs = new FileStream(Path.Combine(args[2], Pictures[i].Index + " - " + Path.GetFileNameWithoutExtension(Pictures[i].File) + ".png"), FileMode.Create);
+                                        image.Write(fs, ImageMagick.MagickFormat.Png);
+                                        fs.Seek(0, SeekOrigin.Begin);
+                                        Pictures[i].Hash = BitConverter.ToString(System.Security.Cryptography.SHA256.Create().ComputeHash(fs)).Replace("-", "");
+                                        fs.Close();
+                                    }
+                                    else if (sPixelFormat == "PF_B8G8R8A8")
+                                    {
+                                        MemoryStream ms = new MemoryStream();
+                                        WriteDDSHeaderBGRA(ms, texture.Data.Mips[0].SizeX, texture.Data.Mips[0].SizeY);
+                                        ms.Write(texture.Data.Mips[0].BulkData.BulkData, 0, texture.Data.Mips[0].BulkData.BulkData.Length);
+                                        ms.Seek(0, SeekOrigin.Begin);
+                                        ImageMagick.MagickReadSettings settings = new ImageMagick.MagickReadSettings();
+                                        settings.Format = ImageMagick.MagickFormat.Dds;
+                                        ImageMagick.MagickImage image = new ImageMagick.MagickImage(ms, settings);
+                                        FileStream fs = new FileStream(Path.Combine(args[2], Pictures[i].Index + " - " + Path.GetFileNameWithoutExtension(Pictures[i].File) + ".png"), FileMode.Create);
+                                        image.Write(fs, ImageMagick.MagickFormat.Png);
+                                        fs.Seek(0, SeekOrigin.Begin);
+                                        Pictures[i].Hash = BitConverter.ToString(System.Security.Cryptography.SHA256.Create().ComputeHash(fs)).Replace("-", "");
+                                        fs.Close();
+                                    }
+                                    else if (sPixelFormat == "PF_BC5")
+                                    {
+                                        MemoryStream ms = new MemoryStream();
+                                        WriteDDSHeaderATI2(ms, texture.Data.Mips[0].SizeX, texture.Data.Mips[0].SizeY);
+                                        ms.Write(texture.Data.Mips[0].BulkData.BulkData, 0, texture.Data.Mips[0].BulkData.BulkData.Length);
+                                        ms.Seek(0, SeekOrigin.Begin);
+                                        ImageMagick.MagickReadSettings settings = new ImageMagick.MagickReadSettings();
+                                        settings.Format = ImageMagick.MagickFormat.Dds;
+                                        ImageMagick.MagickImage image = new ImageMagick.MagickImage(ms, settings);
+                                        FileStream fs = new FileStream(Path.Combine(args[2], Pictures[i].Index + " - " + Path.GetFileNameWithoutExtension(Pictures[i].File) + ".png"), FileMode.Create);
+                                        image.Write(fs, ImageMagick.MagickFormat.Png);
+                                        fs.Seek(0, SeekOrigin.Begin);
+                                        Pictures[i].Hash = BitConverter.ToString(System.Security.Cryptography.SHA256.Create().ComputeHash(fs)).Replace("-", "");
+                                        fs.Close();
+                                    }
+                                    else if (sPixelFormat == "PF_G8")
+                                    {
+                                        MemoryStream ms = new MemoryStream();
+                                        WriteDDSHeaderG8(ms, texture.Data.Mips[0].SizeX, texture.Data.Mips[0].SizeY);
+                                        ms.Write(texture.Data.Mips[0].BulkData.BulkData, 0, texture.Data.Mips[0].BulkData.BulkData.Length);
+                                        ms.Seek(0, SeekOrigin.Begin);
+                                        ImageMagick.MagickReadSettings settings = new ImageMagick.MagickReadSettings();
+                                        settings.Format = ImageMagick.MagickFormat.Dds;
+                                        ImageMagick.MagickImage image = new ImageMagick.MagickImage(ms, settings);
+                                        FileStream fs = new FileStream(Path.Combine(args[2], Pictures[i].Index + " - " + Path.GetFileNameWithoutExtension(Pictures[i].File) + ".png"), FileMode.Create);
+                                        image.Write(fs, ImageMagick.MagickFormat.Png);
+                                        fs.Seek(0, SeekOrigin.Begin);
+                                        Pictures[i].Hash = BitConverter.ToString(System.Security.Cryptography.SHA256.Create().ComputeHash(fs)).Replace("-", "");
+                                        fs.Close();
+                                    }
+                                    else
+                                    {
+                                        throw new Exception("Other formats not supported!");
+                                    }
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                Console.WriteLine("Cannot read file, reason: " + ex.Message);
+                            }
+                        }
+                        StreamWriter sw = new StreamWriter(Path.Combine(args[2], "_textures.txt"));
+                        for (int i = 0; i < Pictures.Count; i++)
+                        {
+                            sw.WriteLine("[" + Pictures[i].Index + "][" + Pictures[i].File + "][" + Pictures[i].Hash + "]");
+                        }
+                        sw.Close();
+                    }
+                    break;
+                case "restore_textures":
+                    // restore_textures "C:\Program Files (x86)\Steam\SteamApps\common\The Park" "C:\Program Files (x86)\Steam\SteamApps\common\The Park\Workspace\ConvertedTextures"
+                    {
+                        List<PictureInfo> Pictures = ReadPictures(Path.Combine(args[2], "_textures.txt"));
+                        for (int i = 0; i < Pictures.Count; i++)
+                        {
+                            Console.WriteLine("[" + (i + 1) + " of " + Pictures.Count + "] " + Pictures[i].File);
+                            if (!File.Exists(Path.Combine(args[2], Pictures[i].Index + " - " + Path.GetFileNameWithoutExtension(Pictures[i].File) + ".png")))
+                            {
+                                Console.WriteLine("Not found, skip.");
+                                continue;
+                            }
+                            byte[] PictureBytes = File.ReadAllBytes(Path.Combine(args[2], Pictures[i].Index + " - " + Path.GetFileNameWithoutExtension(Pictures[i].File) + ".png"));
+                            string Hash = BitConverter.ToString(System.Security.Cryptography.SHA256.Create().ComputeHash(PictureBytes, 0, PictureBytes.Length)).Replace("-", "");
+                            if (Hash == Pictures[i].Hash)
+                            {
+                                Console.WriteLine("Not changed, skip.");
+                                continue;
+                            }
+                            PackageReader asset = new PackageReader();
+                            asset.OpenPackageFile(Path.Combine(args[1], Pictures[i].File));
+                            Texture2D texture = (Texture2D)asset.ExportMap[0].Object;
+                            string sPixelFormat = PackageReader.NameMap[texture.PixelFormatName1.ComparisonIndex];
+                            if (sPixelFormat.Length >= 6 && sPixelFormat.Substring(0, 6) == "PF_DXT")
+                            {
+                                int nVersion = int.Parse(sPixelFormat.Substring(6));
+                                int n4x4Count = 0;
+                                for (int j = 0; j < texture.Data.Mips.Count; j++)
+                                {
+                                    int nWidth = texture.Data.Mips[j].SizeX;
+                                    int nHeight = texture.Data.Mips[j].SizeY;
+                                    if (nWidth == 4 && nHeight == 4)
+                                        n4x4Count++;
+                                    ImageMagick.MagickImage image = new ImageMagick.MagickImage(Path.Combine(args[2], Pictures[i].Index + " - " + Path.GetFileNameWithoutExtension(Pictures[i].File) + ".png"));
+                                    if (n4x4Count == 2)
+                                    {
+                                        image.Resize(2, 2);
+                                        image.Resize(4, 4);
+                                    }
+                                    if (n4x4Count == 3)
+                                    {
+                                        image.Resize(1, 1);
+                                        image.Resize(4, 4);
+                                    }
+                                    MemoryStream ms = new MemoryStream();
+                                    image.Write(ms, ImageMagick.MagickFormat.Dds);
+                                    ms.Seek(87, SeekOrigin.Begin);
+                                    int nCurrentVersion = ms.ReadByte() - 0x30;
+                                    if (nCurrentVersion != nVersion)
+                                        throw new Exception("Bad conversion!");
+                                    byte[] BulkData = new byte[ms.Length - 124];
+                                    ms.Seek(124, SeekOrigin.Begin);
+                                    ms.Read(BulkData, 0, BulkData.Length);
+                                    image.Write(Path.Combine(args[2], Pictures[i].Index + " - " + Path.GetFileNameWithoutExtension(Pictures[i].File) + ".dds")); // so sad, ImageMagic has bug here :(
+                                    texture.Data.Mips[j].BulkData.BulkData = BulkData;
+                                }
+                            }
+                            else
+                            {
+                                throw new Exception("Other formats not supported!");
+                            }
+                            CreatePath(Path.Combine(args[2], "Result", Pictures[i].File));
+                            asset.SavePackageFile(Path.Combine(args[2], "Result", Pictures[i].File));
+                        }
                     }
                     break;
                 default:
