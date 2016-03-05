@@ -718,16 +718,39 @@ namespace UAssetTools
                                     {
                                         image.Resize(nWidth, nHeight);
                                     }
+
+                                    /*
                                     MemoryStream ms = new MemoryStream();
                                     image.Write(ms, ImageMagick.MagickFormat.Dds); // so sad, ImageMagic has bug here :(
                                     ms.Seek(87, SeekOrigin.Begin);
                                     int nCurrentVersion = ms.ReadByte() - 0x30;
                                     if (nCurrentVersion != nVersion)
                                         throw new Exception("Bad conversion!");
-                                    byte[] BulkData = new byte[ms.Length - 124];
-                                    ms.Seek(125, SeekOrigin.Begin);
+                                    byte[] BulkData = new byte[ms.Length - 124 - 4];
+                                    ms.Seek(124 + 4, SeekOrigin.Begin);
                                     ms.Read(BulkData, 0, BulkData.Length);
                                     texture.Data.Mips[j].BulkData.BulkData = BulkData;
+                                    */
+
+                                    string temp1 = Path.GetTempFileName();
+                                    File.Move(temp1, temp1 + ".png");
+                                    image.Write(temp1 + ".png");
+                                    string temp2 = Path.GetTempFileName();
+                                    File.Move(temp2, temp2 + ".dds");
+                                    System.Diagnostics.Process nvdxt = System.Diagnostics.Process.Start("ThirdParty\\nvdxt.exe", "-file \"" + (temp1 + ".png") + "\" -dxt" + nVersion + " -nomipmap -quality_production -output \"" + (temp2 + ".dds") + "\"");
+                                    nvdxt.WaitForExit();
+                                    FileStream fs = new FileStream(temp2 + ".dds", FileMode.Open);
+                                    fs.Seek(87, SeekOrigin.Begin);
+                                    int nCurrentVersion = fs.ReadByte() - 0x30;
+                                    if (nCurrentVersion != nVersion)
+                                        throw new Exception("Bad conversion!");
+                                    fs.Seek(124 + 4, SeekOrigin.Begin);
+                                    byte[] BulkData = new byte[fs.Length - 124 - 4];
+                                    fs.Read(BulkData, 0, BulkData.Length);
+                                    texture.Data.Mips[j].BulkData.BulkData = BulkData;
+                                    fs.Close();
+                                    File.Delete(temp1 + ".png");
+                                    File.Delete(temp2 + ".dds");
                                 }
                             }
                             else

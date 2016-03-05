@@ -39,6 +39,7 @@ namespace UAssetTools
         public void TestTexture2D()
         {
             Assert.IsTrue(OpenSave("..\\..\\Tests\\Texture2D_1.uasset"));
+            Assert.IsTrue(OpenSave("..\\..\\Tests\\Texture2D_2.uasset"));
         }
 
         [TestMethod]
