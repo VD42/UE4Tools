@@ -737,7 +737,7 @@ namespace UAssetTools
                                     image.Write(temp1 + ".png");
                                     string temp2 = Path.GetTempFileName();
                                     File.Move(temp2, temp2 + ".dds");
-                                    System.Diagnostics.Process nvdxt = System.Diagnostics.Process.Start("ThirdParty\\nvdxt.exe", "-file \"" + (temp1 + ".png") + "\" -dxt" + nVersion + " -nomipmap -quality_production -output \"" + (temp2 + ".dds") + "\"");
+                                    System.Diagnostics.Process nvdxt = System.Diagnostics.Process.Start(Path.Combine(Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().GetName().CodeBase), "ThirdParty\\nvdxt.exe"), "-file \"" + (temp1 + ".png") + "\" -dxt" + nVersion + " -nomipmap -quality_production -output \"" + (temp2 + ".dds") + "\"");
                                     nvdxt.WaitForExit();
                                     FileStream fs = new FileStream(temp2 + ".dds", FileMode.Open);
                                     fs.Seek(87, SeekOrigin.Begin);
