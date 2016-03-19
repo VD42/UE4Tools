@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using Helpers;
 using System.IO;
+using System.Security.Cryptography;
 
 namespace PakTools
 {
@@ -29,6 +30,15 @@ namespace PakTools
             fs.Read(IndexHash, 0, 20);
         }
 
+        public void Serialize(FileStream fs)
+        {
+            WriteUInt32(fs, Magic);
+            WriteInt32(fs, Version);
+            WriteInt64(fs, IndexOffset);
+            WriteInt64(fs, IndexSize);
+            fs.Write(IndexHash, 0, 20);
+        }
+
         public Int64 GetSerializedSize()
         {
             return 4 + 4 + 8 + 8 + 20;
@@ -44,6 +54,12 @@ namespace PakTools
         {
             CompressedStart = ReadInt64(fs);
             CompressedEnd = ReadInt64(fs);
+        }
+
+        public void Serialize(FileStream fs)
+        {
+            WriteInt64(fs, CompressedStart);
+            WriteInt64(fs, CompressedEnd);
         }
     }
 
@@ -84,7 +100,22 @@ namespace PakTools
             if (bEncrypted != 0)
                 throw new Exception("Encription not supported!");
             CompressionBlockSize = ReadInt32(fs);
-        } 
+        }
+
+        public void Serialize(FileStream fs)
+        {
+            WriteInt64(fs, Offset);
+            WriteInt64(fs, Size);
+            WriteInt64(fs, UncompressedSize);
+            WriteInt32(fs, CompressionMethod);
+            fs.Write(Hash, 0, 20);
+            if (CompressionMethod > 0)
+                throw new Exception("Compression not supported!");
+            WriteByte(fs, bEncrypted);
+            if (bEncrypted != 0)
+                throw new Exception("Encription not supported!");
+            WriteInt32(fs, CompressionBlockSize);
+        }
     }
 
     public class PakFile : BinaryHelper
@@ -92,6 +123,8 @@ namespace PakTools
         public PakInfo Info;
         public string MountPoint;
         public Int32 NumEntries;
+
+        public Int64 IndexOffsetValue;
 
         public PakFile()
         {
@@ -105,6 +138,22 @@ namespace PakTools
             if (Info.Version != 3)
                 throw new Exception("Other versions not supported!");
             LoadIndex(fs);
+        }
+
+        public void Serialize(FileStream fs)
+        {
+            MountPoint = Program.OutPrefix;
+            SaveIndex(fs);
+            Info.IndexOffset = IndexOffsetValue;
+            Info.IndexSize = fs.Position - IndexOffsetValue;
+            Info.Version = 3;
+            Info.Magic = 0x5A6F12E1;
+            byte[] Data = new byte[Info.IndexSize];
+            fs.Seek(Info.IndexOffset, SeekOrigin.Begin);
+            fs.Read(Data, 0, (int)Info.IndexSize);
+            SHA1 sha = new SHA1CryptoServiceProvider();
+            Info.IndexHash = sha.ComputeHash(Data);
+            Info.Serialize(fs);
         }
 
         public void CreatePath(string FilePath)
@@ -170,6 +219,44 @@ namespace PakTools
 
                 fs_out.Close();
                 fs.Seek(nIndexPosition, SeekOrigin.Begin);
+            }
+        }
+
+        public void SaveIndex(FileStream fs)
+        {
+            List<string> files = new List<string>();
+            Program.GetFiles(Program.OutPath, ref files);
+            List<PakEntry> info = new List<PakEntry>();
+            for (int i = 0; i < files.Count; i++)
+            {
+                FileStream fs_in = new FileStream(files[i], FileMode.Open);
+                byte[] Data = new byte[fs_in.Length];
+                fs_in.Read(Data, 0, Data.Length);
+                fs_in.Close();
+
+                Int64 Offset = fs.Position;
+                PakEntry FileHeader = new PakEntry();
+                SHA1 sha = new SHA1CryptoServiceProvider();
+                FileHeader.Hash = sha.ComputeHash(Data);
+                FileHeader.Size = Data.Length;
+                FileHeader.UncompressedSize = Data.Length;
+                FileHeader.Serialize(fs);
+
+                fs.Write(Data, 0, Data.Length);
+
+                FileHeader.Offset = Offset;
+                info.Add(FileHeader);
+            }
+
+            IndexOffsetValue = fs.Position;
+
+            WriteString(fs, MountPoint);
+            WriteInt32(fs, files.Count);
+
+            for (int i = 0; i < files.Count; i++)
+            {
+                WriteString(fs, files[i].Replace(Program.OutPath + "\\", "").Replace('\\', '/'));
+                info[i].Serialize(fs);
             }
         }
     }
