@@ -26,14 +26,14 @@ namespace LocResTools
             String = text;
         }
 
-        public void DeSerialize(FileStream fs)
+        public void DeSerialize(Stream fs)
         {
             Key = ReadString(fs);
             Hash = ReadUInt32(fs);
             String = ReadString(fs);
         }
 
-        public void Serialize(FileStream fs)
+        public void Serialize(Stream fs)
         {
             WriteString(fs, Key);
             WriteUInt32(fs, Hash);
@@ -50,7 +50,7 @@ namespace LocResTools
             Namespaces = new List<KeyValuePair<string, List<StringInfo>>>();
         }
 
-        public void DeSerialize(FileStream fs)
+        public void DeSerialize(Stream fs)
         {
             BinaryHelper.bUseUnicode = true;
             UInt32 Count = ReadUInt32(fs);
@@ -68,7 +68,7 @@ namespace LocResTools
             BinaryHelper.bUseUnicode = false;
         }
 
-        public void Serialize(FileStream fs)
+        public void Serialize(Stream fs)
         {
             BinaryHelper.bUseUnicode = true;
             WriteUInt32(fs, (UInt32)Namespaces.Count);

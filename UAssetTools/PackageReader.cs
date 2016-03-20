@@ -55,7 +55,7 @@ namespace UAssetTools
             fs.Close();
         }
 
-        public void DeSerializeNameMap(FileStream fs)
+        public void DeSerializeNameMap(Stream fs)
         {
             if (PackageFileSummary.NameCount > 0)
             {
@@ -65,7 +65,7 @@ namespace UAssetTools
             }
         }
 
-        public void DeSerializeImportMap(FileStream fs)
+        public void DeSerializeImportMap(Stream fs)
         {
             if (PackageFileSummary.ImportCount > 0)
             {
@@ -78,7 +78,7 @@ namespace UAssetTools
             }
         }
 
-        public void DeSerializeExportMap(FileStream fs)
+        public void DeSerializeExportMap(Stream fs)
         {
             if (PackageFileSummary.ExportCount > 0)
             {
@@ -91,7 +91,7 @@ namespace UAssetTools
             }
         }
 
-        public void DeSerializeDependsMap(FileStream fs)
+        public void DeSerializeDependsMap(Stream fs)
         {
             fs.Seek(PackageFileSummary.DependsOffset, SeekOrigin.Begin);
             for (int i = 0; i < PackageFileSummary.ExportCount; i++)
@@ -103,7 +103,7 @@ namespace UAssetTools
             }
         }
 
-        public void ReadProperties(FileStream fs)
+        public void ReadProperties(Stream fs)
         {
             for (int i = 0; i < ExportMap.Count; i++)
             {
@@ -147,6 +147,14 @@ namespace UAssetTools
                             case "Function": // script currently not parsed
                                 ExportMap[i].Object = new Function();
                                 ((Function)ExportMap[i].Object).DeSerialize(fs);
+                                break;
+                            case "Font":
+                                ExportMap[i].Object = new Font();
+                                ((Font)ExportMap[i].Object).DeSerialize(fs);
+                                break;
+                            case "FontBulkData":
+                                ExportMap[i].Object = new FontBulkData();
+                                ((FontBulkData)ExportMap[i].Object).DeSerialize(fs);
                                 break;
                             default:
                                 if (!bEnableSoftMode)
@@ -209,28 +217,28 @@ namespace UAssetTools
             fs.Close();
         }
 
-        public void SerializeNameMap(FileStream fs)
+        public void SerializeNameMap(Stream fs)
         {
             NameOffset = fs.Position;
             for (int i = 0; i < NameMap.Count; i++)
                 WriteString(fs, NameMap[i]);
         }
 
-        public void SerializeImportMap(FileStream fs)
+        public void SerializeImportMap(Stream fs)
         {
             ImportOffset = fs.Position;
             for (int i = 0; i < ImportMap.Count; i++)
                 ImportMap[i].Serialize(fs);
         }
 
-        public void SerializeExportMap(FileStream fs)
+        public void SerializeExportMap(Stream fs)
         {
             ExportOffset = fs.Position;
             for (int i = 0; i < ExportMap.Count; i++)
                 ExportMap[i].Serialize(fs);
         }
 
-        public void SerializeDependsMap(FileStream fs)
+        public void SerializeDependsMap(Stream fs)
         {
             DependsOffset = fs.Position;
             for (int i = 0; i < PackageFileSummary.ExportCount; i++)
@@ -240,13 +248,13 @@ namespace UAssetTools
                     WriteInt32(fs, DependsMap[i][j]);
             }
         }
-        public void WriteAssetRegistryData(FileStream fs)
+        public void WriteAssetRegistryData(Stream fs)
         {
             AssetRegistryDataOffset = fs.Position;
             WriteInt32(fs, 0); // not supported
         }
 
-        public void WriteProperties(FileStream fs)
+        public void WriteProperties(Stream fs)
         {
             TotalHeaderSize = fs.Position;
 
@@ -286,6 +294,12 @@ namespace UAssetTools
                             case "Function":
                                 ((Function)ExportMap[i].Object).Serialize(fs);
                                 break;
+                            case "Font":
+                                ((Font)ExportMap[i].Object).Serialize(fs);
+                                break;
+                            case "FontBulkData":
+                                ((FontBulkData)ExportMap[i].Object).Serialize(fs);
+                                break;
                             default:
                                 if (!bEnableSoftMode)
                                     throw new Exception("Unknown object name!");
@@ -305,7 +319,7 @@ namespace UAssetTools
             }
         }
 
-        public void WriteBulkData(FileStream fs)
+        public void WriteBulkData(Stream fs)
         {
             BulkDataStartOffset = fs.Position;
             for (int i = 0; i < UntypedBulkData.BulkStorage.Count; i++)

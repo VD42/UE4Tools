@@ -125,7 +125,7 @@ namespace LocResTools
                 // unpack "C:\Program Files (x86)\Steam\SteamApps\common\The Park\AtlanticIslandPark\Content\Localization\Game\en\Game.locres" "C:\Program Files (x86)\Steam\SteamApps\common\The Park\AtlanticIslandPark\Content\Localization\Game\en\TEST_Game.locres.txt"
                 case "unpack":
                     {
-                        FileStream fs = new FileStream(args[1], FileMode.Open);
+                        Stream fs = new FileStream(args[1], FileMode.Open);
                         LocRes lr = new LocRes();
                         lr.DeSerialize(fs);
                         fs.Close();
@@ -187,7 +187,7 @@ namespace LocResTools
                                 lr.Namespaces[nCurrentNamespace].Value[lr.Namespaces[nCurrentNamespace].Value.Count - 1].String += line + "\r\n";
                         }
                         sr.Close();
-                        FileStream fs = new FileStream(args[1], FileMode.Create);
+                        Stream fs = new FileStream(args[1], FileMode.Create);
                         lr.Serialize(fs);
                         fs.Close();
                     }

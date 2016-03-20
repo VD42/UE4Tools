@@ -319,6 +319,8 @@ namespace UAssetTools
                 Console.WriteLine("UAssetTools.exe extract_textures <game_path> <path_to_extracted_textures>");
                 Console.WriteLine("UAssetTools.exe extract_convert_textures <game_path> <path_to_extracted_and_converted_textures>");
                 Console.WriteLine("UAssetTools.exe restore_textures <game_path> <path_to_extracted_and_converted_textures>");
+                Console.WriteLine("UAssetTools.exe font_unpack <asset_file_path> <path_to_font>");
+                Console.WriteLine("UAssetTools.exe font_pack <asset_file_path> <path_to_font>");
                 return;
             }
 
@@ -760,6 +762,53 @@ namespace UAssetTools
                             CreatePath(Path.Combine(args[2], "Result", Pictures[i].File));
                             asset.SavePackageFile(Path.Combine(args[2], "Result", Pictures[i].File));
                         }
+                    }
+                    break;
+                case "font_unpack":
+                    // font_unpack "C:\Program Files (x86)\Steam\steamapps\common\The Park\AtlanticIslandPark\Content\UI\Fonts\MISPROJE.uasset" "C:\Program Files (x86)\Steam\steamapps\common\The Park\AtlanticIslandPark\Content\UI\Fonts\MISPROJE.ttf"
+                    {
+                        PackageReader asset = new PackageReader();
+                        asset.OpenPackageFile(args[1]);
+                        for (int i = 0; i < asset.ExportMap.Count; i++)
+                        {
+                            if (asset.ExportMap[i].Object.GetType() == typeof(FontBulkData))
+                            {
+                                FontBulkData font = (FontBulkData)asset.ExportMap[i].Object;
+                                FileStream fs = new FileStream(args[2], FileMode.Create);
+                                if (font.BulkData.BulkDataDecompressed != null)
+                                    fs.Write(font.BulkData.BulkDataDecompressed, 0, font.BulkData.BulkDataDecompressed.Length);
+                                else
+                                    fs.Write(font.BulkData.BulkData, 0, font.BulkData.BulkData.Length);
+                                fs.Close();
+                            }
+                        }
+                    }
+                    break;
+                case "font_pack":
+                    // font_pack "C:\Program Files (x86)\Steam\steamapps\common\The Park\AtlanticIslandPark\Content\UI\Fonts\MISPROJE.uasset" "C:\Program Files (x86)\Steam\steamapps\common\The Park\AtlanticIslandPark\Content\UI\Fonts\MISPROJE.ttf"
+                    {
+                        PackageReader asset = new PackageReader();
+                        asset.OpenPackageFile(args[1]);
+                        for (int i = 0; i < asset.ExportMap.Count; i++)
+                        {
+                            if (asset.ExportMap[i].Object.GetType() == typeof(FontBulkData))
+                            {
+                                FontBulkData font = (FontBulkData)asset.ExportMap[i].Object;
+                                FileStream fs = new FileStream(args[2], FileMode.Open);
+                                if (font.BulkData.BulkDataDecompressed != null)
+                                {
+                                    font.BulkData.BulkDataDecompressed = new byte[fs.Length];
+                                    fs.Read(font.BulkData.BulkDataDecompressed, 0, font.BulkData.BulkDataDecompressed.Length);
+                                }
+                                else
+                                {
+                                    font.BulkData.BulkData = new byte[fs.Length];
+                                    fs.Read(font.BulkData.BulkData, 0, font.BulkData.BulkData.Length);
+                                }
+                                fs.Close();
+                            }
+                        }
+                        asset.SavePackageFile(args[1]);
                     }
                     break;
                 default:

@@ -35,7 +35,7 @@ namespace PakTools
                     // unpack "C:\Program Files (x86)\Steam\SteamApps\common\The Park\AtlanticIslandPark\Content\Paks\AtlanticIslandPark-WindowsNoEditor.pak.bak" "C:\Program Files (x86)\Steam\SteamApps\common\The Park"
                     // unpack "C:\Program Files (x86)\Steam\steamapps\common\The Park\Workspace\Russian.pak" "C:\Program Files (x86)\Steam\steamapps\common\The Park\Workspace\unpack_test"
                     {
-                        FileStream fs = new FileStream(args[1], FileMode.Open);
+                        Stream fs = new FileStream(args[1], FileMode.Open);
                         OutPath = args[2];
                         PakFile pack = new PakFile();
                         pack.DeSerialize(fs);
@@ -45,7 +45,7 @@ namespace PakTools
                 case "pack":
                     // pack "C:\Program Files (x86)\Steam\steamapps\common\The Park\Workspace\AtlanticIslandPark-Russian.pak" "C:\Program Files (x86)\Steam\steamapps\common\The Park\Workspace\result" "../../../"
                     {
-                        FileStream fs = new FileStream(args[1], FileMode.Create);
+                        Stream fs = new FileStream(args[1], FileMode.Create);
                         OutPath = args[2];
                         OutPrefix = args[3];
                         PakFile pack = new PakFile();

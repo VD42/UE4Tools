@@ -19,7 +19,7 @@ namespace PakTools
             IndexHash = new byte[20];
         }
 
-        public void DeSerialize(FileStream fs)
+        public void DeSerialize(Stream fs)
         {
             Magic = ReadUInt32(fs);
             if (Magic != 0x5A6F12E1)
@@ -30,7 +30,7 @@ namespace PakTools
             fs.Read(IndexHash, 0, 20);
         }
 
-        public void Serialize(FileStream fs)
+        public void Serialize(Stream fs)
         {
             WriteUInt32(fs, Magic);
             WriteInt32(fs, Version);
@@ -50,13 +50,13 @@ namespace PakTools
         public Int64 CompressedStart;
         public Int64 CompressedEnd;
 
-        public void DeSerialize(FileStream fs)
+        public void DeSerialize(Stream fs)
         {
             CompressedStart = ReadInt64(fs);
             CompressedEnd = ReadInt64(fs);
         }
 
-        public void Serialize(FileStream fs)
+        public void Serialize(Stream fs)
         {
             WriteInt64(fs, CompressedStart);
             WriteInt64(fs, CompressedEnd);
@@ -80,7 +80,7 @@ namespace PakTools
             CompressionBlocks = new List<PakCompressedBlock>();
         }
 
-        public void DeSerialize(FileStream fs)
+        public void DeSerialize(Stream fs)
         {
             Offset = ReadInt64(fs);
             Size = ReadInt64(fs);
@@ -102,7 +102,7 @@ namespace PakTools
             CompressionBlockSize = ReadInt32(fs);
         }
 
-        public void Serialize(FileStream fs)
+        public void Serialize(Stream fs)
         {
             WriteInt64(fs, Offset);
             WriteInt64(fs, Size);
@@ -131,7 +131,7 @@ namespace PakTools
             Info = new PakInfo();
         }
 
-        public void DeSerialize(FileStream fs)
+        public void DeSerialize(Stream fs)
         {
             fs.Seek(-Info.GetSerializedSize(), SeekOrigin.End);
             Info.DeSerialize(fs);
@@ -140,7 +140,7 @@ namespace PakTools
             LoadIndex(fs);
         }
 
-        public void Serialize(FileStream fs)
+        public void Serialize(Stream fs)
         {
             MountPoint = Program.OutPrefix;
             SaveIndex(fs);
@@ -166,7 +166,7 @@ namespace PakTools
             }
         }
 
-        public void LoadIndex(FileStream fs)
+        public void LoadIndex(Stream fs)
         {
             Int64 nIndexPosition = Info.IndexOffset;
             fs.Seek(nIndexPosition, SeekOrigin.Begin);
@@ -194,7 +194,7 @@ namespace PakTools
 
                 string FilePath = Path.Combine(Program.OutPath, Filename.Replace('/', '\\'));
                 CreatePath(FilePath);
-                FileStream fs_out = new FileStream(FilePath, FileMode.Create);
+                Stream fs_out = new FileStream(FilePath, FileMode.Create);
 
                 if (Entry.CompressionMethod == 0)
                 {
@@ -222,14 +222,14 @@ namespace PakTools
             }
         }
 
-        public void SaveIndex(FileStream fs)
+        public void SaveIndex(Stream fs)
         {
             List<string> files = new List<string>();
             Program.GetFiles(Program.OutPath, ref files);
             List<PakEntry> info = new List<PakEntry>();
             for (int i = 0; i < files.Count; i++)
             {
-                FileStream fs_in = new FileStream(files[i], FileMode.Open);
+                Stream fs_in = new FileStream(files[i], FileMode.Open);
                 byte[] Data = new byte[fs_in.Length];
                 fs_in.Read(Data, 0, Data.Length);
                 fs_in.Close();

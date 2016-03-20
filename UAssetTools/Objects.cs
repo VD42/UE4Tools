@@ -14,12 +14,12 @@ namespace UAssetTools
             Properties = new StructProperty();
         }
 
-        public virtual void DeSerialize(FileStream fs)
+        public virtual void DeSerialize(Stream fs)
         {
             Properties.DeSerialize(fs);
         }
 
-        public virtual void Serialize(FileStream fs)
+        public virtual void Serialize(Stream fs)
         {
             Properties.Serialize(fs);
         }
@@ -48,7 +48,7 @@ namespace UAssetTools
             Data = new TexturePlatformData();
         }
 
-        public override void DeSerialize(FileStream fs)
+        public override void DeSerialize(Stream fs)
         {
             base.DeSerialize(fs);
 
@@ -72,7 +72,7 @@ namespace UAssetTools
                 throw new Exception("Skipping not supported!");
         }
 
-        public override void Serialize(FileStream fs)
+        public override void Serialize(Stream fs)
         {
             base.Serialize(fs);
 
@@ -94,7 +94,7 @@ namespace UAssetTools
             PixelFormatName2.Serialize(fs);
         }
 
-        public void Correction(FileStream fs, Int32 SkipOffset)
+        public void Correction(Stream fs, Int32 SkipOffset)
         {
             Int64 nCurrentPosition = fs.Position;
 
@@ -120,7 +120,7 @@ namespace UAssetTools
             CompressedFormatData = new FormatContainer();
         }
 
-        public override void DeSerialize(FileStream fs)
+        public override void DeSerialize(Stream fs)
         {
             base.DeSerialize(fs);
 
@@ -137,7 +137,7 @@ namespace UAssetTools
             CompressedDataGuid = ReadGuid(fs);
         }
 
-        public override void Serialize(FileStream fs)
+        public override void Serialize(Stream fs)
         {
             base.Serialize(fs);
 
@@ -163,7 +163,7 @@ namespace UAssetTools
             Names = new List<Name>();
         }
 
-        public override void DeSerialize(FileStream fs)
+        public override void DeSerialize(Stream fs)
         {
             base.DeSerialize(fs);
 
@@ -183,7 +183,7 @@ namespace UAssetTools
             EnumTypeByte = ReadByte(fs);
         }
 
-        public override void Serialize(FileStream fs)
+        public override void Serialize(Stream fs)
         {
             base.Serialize(fs);
 
@@ -198,12 +198,12 @@ namespace UAssetTools
 
     public class UserDefinedEnum : Enum
     {
-        public override void DeSerialize(FileStream fs)
+        public override void DeSerialize(Stream fs)
         {
             base.DeSerialize(fs);
         }
 
-        public override void Serialize(FileStream fs)
+        public override void Serialize(Stream fs)
         {
             base.Serialize(fs);
         }
@@ -221,7 +221,7 @@ namespace UAssetTools
             RowMap = new List<KeyValuePair<Name, StructProperty>>();
         }
 
-        public override void DeSerialize(FileStream fs)
+        public override void DeSerialize(Stream fs)
         {
             base.DeSerialize(fs);
 
@@ -254,7 +254,7 @@ namespace UAssetTools
             }
         }
 
-        public override void Serialize(FileStream fs)
+        public override void Serialize(Stream fs)
         {
             base.Serialize(fs);
 
@@ -271,12 +271,12 @@ namespace UAssetTools
 
     public class RawObject : Object
     {
-        public override void DeSerialize(FileStream fs)
+        public override void DeSerialize(Stream fs)
         {
             // Nothing
         }
 
-        public override void Serialize(FileStream fs)
+        public override void Serialize(Stream fs)
         {
             // Nothing
         }
@@ -288,7 +288,7 @@ namespace UAssetTools
 
         public Int32 Next;
 
-        public override void DeSerialize(FileStream fs)
+        public override void DeSerialize(Stream fs)
         {
             base.DeSerialize(fs);
 
@@ -297,7 +297,7 @@ namespace UAssetTools
             Next = ReadInt32(fs);
         }
 
-        public override void Serialize(FileStream fs)
+        public override void Serialize(Stream fs)
         {
             base.Serialize(fs);
 
@@ -315,7 +315,7 @@ namespace UAssetTools
         public Int32 SerializedScriptSize;
         public byte[] SerializedScript;
 
-        public override void DeSerialize(FileStream fs)
+        public override void DeSerialize(Stream fs)
         {
             base.DeSerialize(fs);
             SuperStruct = ReadInt32(fs);
@@ -380,7 +380,7 @@ namespace UAssetTools
             }
         }
 
-        public override void Serialize(FileStream fs)
+        public override void Serialize(Stream fs)
         {
             base.Serialize(fs);
 
@@ -400,7 +400,7 @@ namespace UAssetTools
         public Int32 EventGraphFunction;
         public Int32 EventGraphCallOffset;
 
-        public override void DeSerialize(FileStream fs)
+        public override void DeSerialize(Stream fs)
         {
             base.DeSerialize(fs);
 
@@ -413,13 +413,83 @@ namespace UAssetTools
             EventGraphCallOffset = ReadInt32(fs);
         }
 
-        public override void Serialize(FileStream fs)
+        public override void Serialize(Stream fs)
         {
             base.Serialize(fs);
 
             WriteUInt32(fs, FunctionFlags);
             WriteInt32(fs, EventGraphFunction);
             WriteInt32(fs, EventGraphCallOffset);
+        }
+    }
+
+    public class Font : Object
+    {
+        public Int32 Something; // ???
+
+        public Dictionary<UInt16, UInt16> CharRemap;
+
+        public Font()
+        {
+            CharRemap = new Dictionary<UInt16, UInt16>();
+        }
+
+        public override void DeSerialize(Stream fs)
+        {
+            base.DeSerialize(fs);
+
+            Something = ReadInt32(fs); // ???
+
+            Int32 NumElements = ReadInt32(fs);
+            for (int i = 0; i < NumElements; i++)
+                CharRemap.Add(ReadUInt16(fs), ReadUInt16(fs));
+
+            if (FileSummary.FileVersionUE4 < 411)
+                throw new Exception("This version not supported!");
+        }
+
+        public override void Serialize(Stream fs)
+        {
+            base.Serialize(fs);
+
+            WriteInt32(fs, Something); // ???
+
+            WriteInt32(fs, CharRemap.Count);
+            foreach (UInt16 key in CharRemap.Keys)
+            {
+                WriteUInt16(fs, key);
+                WriteUInt16(fs, CharRemap[key]);
+            }
+        }
+    }
+
+    public class FontBulkData : Object
+    {
+        public UntypedBulkData BulkData;
+
+        public Int32 Something; // ???
+
+        public FontBulkData()
+        {
+            BulkData = new UntypedBulkData();
+        }
+
+        public override void DeSerialize(Stream fs)
+        {
+            base.DeSerialize(fs);
+
+            Something = ReadInt32(fs); // ???
+
+            BulkData.DeSerialize(fs);
+        }
+
+        public override void Serialize(Stream fs)
+        {
+            base.Serialize(fs);
+
+            WriteInt32(fs, Something); // ???
+
+            BulkData.Serialize(fs);
         }
     }
 }

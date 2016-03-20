@@ -7,14 +7,14 @@ namespace Helpers
     {
         public static bool bUseUnicode = false;
 
-        public Int32 ReadInt32(FileStream fs)
+        public Int32 ReadInt32(Stream fs)
         {
             byte[] buf = new byte[4];
             fs.Read(buf, 0, 4);
             return BitConverter.ToInt32(buf, 0);
         }
 
-        public string ReadString(FileStream fs)
+        public string ReadString(Stream fs)
         {
             int nLength = ReadInt32(fs);
             if (nLength > 0 && !bUseUnicode)
@@ -37,41 +37,41 @@ namespace Helpers
             return "";
         }
 
-        public UInt32 ReadUInt32(FileStream fs)
+        public UInt32 ReadUInt32(Stream fs)
         {
             byte[] buf = new byte[4];
             fs.Read(buf, 0, 4);
             return BitConverter.ToUInt32(buf, 0);
         }
 
-        public Guid ReadGuid(FileStream fs)
+        public Guid ReadGuid(Stream fs)
         {
             byte[] buf = new byte[16];
             fs.Read(buf, 0, 16);
             return new Guid(buf);
         }
 
-        public Int16 ReadInt16(FileStream fs)
+        public Int16 ReadInt16(Stream fs)
         {
             byte[] buf = new byte[2];
             fs.Read(buf, 0, 2);
             return BitConverter.ToInt16(buf, 0);
         }
 
-        public Int64 ReadInt64(FileStream fs)
+        public Int64 ReadInt64(Stream fs)
         {
             byte[] buf = new byte[8];
             fs.Read(buf, 0, 8);
             return BitConverter.ToInt64(buf, 0);
         }
 
-        public byte ReadByte(FileStream fs)
+        public byte ReadByte(Stream fs)
         {
             int value = fs.ReadByte();
             return (byte)value;
         }
 
-        public bool ReadBool(FileStream fs)
+        public bool ReadBool(Stream fs)
         {
             UInt32 value = ReadUInt32(fs);
             if (value == 0)
@@ -79,27 +79,34 @@ namespace Helpers
             return true;
         }
 
-        public UInt64 ReadUInt64(FileStream fs)
+        public UInt64 ReadUInt64(Stream fs)
         {
             byte[] buf = new byte[8];
             fs.Read(buf, 0, 8);
             return BitConverter.ToUInt64(buf, 0);
         }
 
-        public float ReadFloat(FileStream fs)
+        public float ReadFloat(Stream fs)
         {
             byte[] buf = new byte[4];
             fs.Read(buf, 0, 4);
             return BitConverter.ToSingle(buf, 0); ;
         }
 
-        public void WriteInt32(FileStream fs, Int32 Value)
+        public UInt16 ReadUInt16(Stream fs)
+        {
+            byte[] buf = new byte[2];
+            fs.Read(buf, 0, 2);
+            return BitConverter.ToUInt16(buf, 0);
+        }
+
+        public void WriteInt32(Stream fs, Int32 Value)
         {
             byte[] buf = BitConverter.GetBytes(Value);
             fs.Write(buf, 0, buf.Length);
         }
 
-        public void WriteString(FileStream fs, string Value)
+        public void WriteString(Stream fs, string Value)
         {
             if (Value.Length == 0)
             {
@@ -140,36 +147,36 @@ namespace Helpers
             }
         }
 
-        public void WriteInt16(FileStream fs, Int16 Value)
+        public void WriteInt16(Stream fs, Int16 Value)
         {
             byte[] buf = BitConverter.GetBytes(Value);
             fs.Write(buf, 0, buf.Length);
         }
 
-        public void WriteByte(FileStream fs, byte Value)
+        public void WriteByte(Stream fs, byte Value)
         {
             fs.WriteByte(Value);
         }
 
-        public void WriteUInt32(FileStream fs, UInt32 Value)
+        public void WriteUInt32(Stream fs, UInt32 Value)
         {
             byte[] buf = BitConverter.GetBytes(Value);
             fs.Write(buf, 0, buf.Length);
         }
 
-        public void WriteGuid(FileStream fs, Guid Value)
+        public void WriteGuid(Stream fs, Guid Value)
         {
             byte[] buf = Value.ToByteArray();
             fs.Write(buf, 0, buf.Length);
         }
 
-        public void WriteInt64(FileStream fs, Int64 Value)
+        public void WriteInt64(Stream fs, Int64 Value)
         {
             byte[] buf = BitConverter.GetBytes(Value);
             fs.Write(buf, 0, buf.Length);
         }
 
-        public void WriteBool(FileStream fs, bool Value)
+        public void WriteBool(Stream fs, bool Value)
         {
             if (Value)
                 WriteUInt32(fs, 1);
@@ -177,10 +184,16 @@ namespace Helpers
                 WriteUInt32(fs, 0);
         }
 
-        public void WriteFloat(FileStream fs, float Value)
+        public void WriteFloat(Stream fs, float Value)
         {
             byte[] buf = BitConverter.GetBytes(Value);
             fs.Write(buf, 0, 4);
+        }
+
+        public void WriteUInt16(Stream fs, UInt16 Value)
+        {
+            byte[] buf = BitConverter.GetBytes(Value);
+            fs.Write(buf, 0, buf.Length);
         }
     }
 }

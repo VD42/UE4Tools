@@ -30,7 +30,7 @@ namespace UAssetTools
             InnerType = new Name();
         }
 
-        public void DeSerialize(FileStream fs)
+        public void DeSerialize(Stream fs)
         {
             Name.DeSerialize(fs);
             string sName = PackageReader.NameMap[Name.ComparisonIndex];
@@ -63,7 +63,7 @@ namespace UAssetTools
             }
         }
 
-        public void Serialize(FileStream fs)
+        public void Serialize(Stream fs)
         {
             Name.Serialize(fs);
             string sName = PackageReader.NameMap[Name.ComparisonIndex];
@@ -102,7 +102,7 @@ namespace UAssetTools
             Properties = new List<KeyValuePair<PropertyTag, object>>();
         }
 
-        public void DeSerialize(FileStream fs)
+        public void DeSerialize(Stream fs)
         {
             while (true)
             {
@@ -167,6 +167,21 @@ namespace UAssetTools
                                 ip.DeSerialize(fs);
                                 Properties.Add(new KeyValuePair<PropertyTag, object>(Tag, ip));
                                 break;
+                            case "CompositeFont":
+                                CompositeFont cf = new CompositeFont();
+                                cf.DeSerialize(fs);
+                                Properties.Add(new KeyValuePair<PropertyTag, object>(Tag, cf));
+                                break;
+                            case "Typeface":
+                                Typeface tf = new Typeface();
+                                tf.DeSerialize(fs);
+                                Properties.Add(new KeyValuePair<PropertyTag, object>(Tag, tf));
+                                break;
+                            case "FontData":
+                                FontData fd = new FontData();
+                                fd.DeSerialize(fs);
+                                Properties.Add(new KeyValuePair<PropertyTag, object>(Tag, fd));
+                                break;
                             default:
                                 throw new Exception("Unknown type!");
                         }
@@ -174,12 +189,34 @@ namespace UAssetTools
                     case "ObjectProperty":
                         Properties.Add(new KeyValuePair<PropertyTag, object>(Tag, ReadInt32(fs))); // ??? ClassName 
                         break;
+                    case "ByteProperty":
+                        string sEnumName = PackageReader.NameMap[Tag.EnumName.ComparisonIndex];
+                        if (sEnumName != "None")
+                        {
+                            Name EnumNameValue = new Name();
+                            EnumNameValue.DeSerialize(fs);
+                            string sEnumNameValue = PackageReader.NameMap[EnumNameValue.ComparisonIndex];
+                            Properties.Add(new KeyValuePair<PropertyTag, object>(Tag, EnumNameValue));
+                        }
+                        else
+                        {
+                            Properties.Add(new KeyValuePair<PropertyTag, object>(Tag, ReadByte(fs)));
+                        }
+                        break;
+                    case "NameProperty":
+                        Name n = new Name();
+                        n.DeSerialize(fs);
+                        Properties.Add(new KeyValuePair<PropertyTag, object>(Tag, n));
+                        break;
+                    case "StrProperty":
+                        Properties.Add(new KeyValuePair<PropertyTag, object>(Tag, ReadString(fs)));
+                        break;
                     default:
                         throw new Exception("Unknown type!");
                 }
             }
         }
-        public void Serialize(FileStream fs)
+        public void Serialize(Stream fs)
         {
             Int64 nCurrentPosition;
             Int64 nStartPosition;
@@ -257,6 +294,30 @@ namespace UAssetTools
                                 WriteInt32(fs, (Int32)(nCurrentPosition - nStartPosition));
                                 fs.Seek(nCurrentPosition, SeekOrigin.Begin);
                                 break;
+                            case "CompositeFont":
+                                nStartPosition = fs.Position;
+                                ((CompositeFont)Properties[i].Value).Serialize(fs);
+                                nCurrentPosition = fs.Position;
+                                fs.Seek(Properties[i].Key.SizeOffset, SeekOrigin.Begin);
+                                WriteInt32(fs, (Int32)(nCurrentPosition - nStartPosition));
+                                fs.Seek(nCurrentPosition, SeekOrigin.Begin);
+                                break;
+                            case "Typeface":
+                                nStartPosition = fs.Position;
+                                ((Typeface)Properties[i].Value).Serialize(fs);
+                                nCurrentPosition = fs.Position;
+                                fs.Seek(Properties[i].Key.SizeOffset, SeekOrigin.Begin);
+                                WriteInt32(fs, (Int32)(nCurrentPosition - nStartPosition));
+                                fs.Seek(nCurrentPosition, SeekOrigin.Begin);
+                                break;
+                            case "FontData":
+                                nStartPosition = fs.Position;
+                                ((FontData)Properties[i].Value).Serialize(fs);
+                                nCurrentPosition = fs.Position;
+                                fs.Seek(Properties[i].Key.SizeOffset, SeekOrigin.Begin);
+                                WriteInt32(fs, (Int32)(nCurrentPosition - nStartPosition));
+                                fs.Seek(nCurrentPosition, SeekOrigin.Begin);
+                                break;
                             default:
                                 throw new Exception("Unknown type!");
                         }
@@ -264,6 +325,41 @@ namespace UAssetTools
                     case "ObjectProperty":
                         Properties[i].Key.Serialize(fs);
                         WriteInt32(fs, (Int32)Properties[i].Value); // ??? ClassName
+                        break;
+                    case "ByteProperty":
+                        Properties[i].Key.Serialize(fs);
+                        string sEnumName = PackageReader.NameMap[Properties[i].Key.EnumName.ComparisonIndex];
+                        if (sEnumName != "None")
+                        {
+                            nStartPosition = fs.Position;
+                            ((Name)Properties[i].Value).Serialize(fs);
+                            nCurrentPosition = fs.Position;
+                            fs.Seek(Properties[i].Key.SizeOffset, SeekOrigin.Begin);
+                            WriteInt32(fs, (Int32)(nCurrentPosition - nStartPosition));
+                            fs.Seek(nCurrentPosition, SeekOrigin.Begin);
+                        }
+                        else
+                        {
+                            nStartPosition = fs.Position;
+                            WriteByte(fs, (byte)Properties[i].Value);
+                            nCurrentPosition = fs.Position;
+                            fs.Seek(Properties[i].Key.SizeOffset, SeekOrigin.Begin);
+                            WriteInt32(fs, (Int32)(nCurrentPosition - nStartPosition));
+                            fs.Seek(nCurrentPosition, SeekOrigin.Begin);
+                        }
+                        break;
+                    case "NameProperty":
+                        Properties[i].Key.Serialize(fs);
+                        ((Name)Properties[i].Value).Serialize(fs);
+                        break;
+                    case "StrProperty":
+                        Properties[i].Key.Serialize(fs);
+                        nStartPosition = fs.Position;
+                        WriteString(fs, (string)Properties[i].Value);
+                        nCurrentPosition = fs.Position;
+                        fs.Seek(Properties[i].Key.SizeOffset, SeekOrigin.Begin);
+                        WriteInt32(fs, (Int32)(nCurrentPosition - nStartPosition));
+                        fs.Seek(nCurrentPosition, SeekOrigin.Begin);
                         break;
                     default:
                         throw new Exception("Unknown type!");

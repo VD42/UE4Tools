@@ -10,13 +10,13 @@ namespace UAssetTools
         Int32 ExportCount;
         Int32 NameCount;
 
-        public void DeSerialize(FileStream fs)
+        public void DeSerialize(Stream fs)
         {
             ExportCount = ReadInt32(fs);
             NameCount = ReadInt32(fs);
         }
 
-        public void Serialize(FileStream fs)
+        public void Serialize(Stream fs)
         {
             WriteInt32(fs, ExportCount);
             WriteInt32(fs, NameCount);
@@ -31,7 +31,7 @@ namespace UAssetTools
         public Int32 Changelist;
         public string Branch;
 
-        public void DeSerialize(FileStream fs)
+        public void DeSerialize(Stream fs)
         {
             Major = ReadInt16(fs);
             Minor = ReadInt16(fs);
@@ -40,7 +40,7 @@ namespace UAssetTools
             Branch = ReadString(fs);
         }
 
-        public void Serialize(FileStream fs)
+        public void Serialize(Stream fs)
         {
             WriteInt16(fs, Major);
             WriteInt16(fs, Minor);
@@ -64,14 +64,14 @@ namespace UAssetTools
             TextureTypes = new List<TextureType>();
         }
 
-        public void DeSerialize(FileStream fs)
+        public void DeSerialize(Stream fs)
         {
             int nTextureTypesCount = ReadInt32(fs);
             if (nTextureTypesCount > 0)
                 throw new Exception("TextureAllocations not supported!");
         }
 
-        public void Serialize(FileStream fs)
+        public void Serialize(Stream fs)
         {
             WriteInt32(fs, 0); // nTextureTypesCount
         }
@@ -82,13 +82,13 @@ namespace UAssetTools
         public Int32 ComparisonIndex;
         public UInt32 Number;
 
-        public void DeSerialize(FileStream fs)
+        public void DeSerialize(Stream fs)
         {
             ComparisonIndex = ReadInt32(fs);
             Number = ReadUInt32(fs);
         }
 
-        public void Serialize(FileStream fs)
+        public void Serialize(Stream fs)
         {
             WriteInt32(fs, ComparisonIndex);
             WriteUInt32(fs, Number);
@@ -109,7 +109,7 @@ namespace UAssetTools
             ObjectName = new Name();
         }
 
-        public void DeSerialize(FileStream fs)
+        public void DeSerialize(Stream fs)
         {
             ClassPackage.DeSerialize(fs);
             ClassName.DeSerialize(fs);
@@ -117,7 +117,7 @@ namespace UAssetTools
             ObjectName.DeSerialize(fs);
         }
 
-        public void Serialize(FileStream fs)
+        public void Serialize(Stream fs)
         {
             ClassPackage.Serialize(fs);
             ClassName.Serialize(fs);
@@ -153,7 +153,7 @@ namespace UAssetTools
             ObjectName = new Name();
         }
 
-        public void DeSerialize(FileStream fs)
+        public void DeSerialize(Stream fs)
         {
             ClassIndex = ReadInt32(fs);
             SuperIndex = ReadInt32(fs);
@@ -172,7 +172,7 @@ namespace UAssetTools
             bNotForEditorGame = ReadBool(fs);
         }
 
-        public void Serialize(FileStream fs)
+        public void Serialize(Stream fs)
         {
             WriteInt32(fs, ClassIndex);
             WriteInt32(fs, SuperIndex);
@@ -189,7 +189,7 @@ namespace UAssetTools
             WriteBool(fs, bNotForEditorGame);
         }
 
-        public void Correction(FileStream fs, Int32 SerialSize, Int32 SerialOffset)
+        public void Correction(Stream fs, Int32 SerialSize, Int32 SerialOffset)
         {
             Int64 nCurrentPosition = fs.Position;
 
@@ -211,7 +211,7 @@ namespace UAssetTools
         public string Key;
         public string SourceStringRaw;
 
-        public void DeSerialize(FileStream fs)
+        public void DeSerialize(Stream fs)
         {
             if (FileSummary.FileVersionUE4 < 368)
                 throw new Exception("This version not supported!");
@@ -243,7 +243,7 @@ namespace UAssetTools
             }
         }
 
-        public void Serialize(FileStream fs)
+        public void Serialize(Stream fs)
         {
             WriteInt32(fs, Flags);
             WriteByte(fs, HistoryType);
@@ -261,16 +261,41 @@ namespace UAssetTools
         public Int32 X;
         public Int32 Y;
 
-        public void DeSerialize(FileStream fs)
+        public void DeSerialize(Stream fs)
         {
             X = ReadInt32(fs);
             Y = ReadInt32(fs);
         }
 
-        public void Serialize(FileStream fs)
+        public void Serialize(Stream fs)
         {
             WriteInt32(fs, X);
             WriteInt32(fs, Y);
+        }
+    }
+
+    public class Adler32Computer
+    {
+        private int a = 1;
+        private int b = 0;
+
+        public int Checksum
+        {
+            get
+            {
+                return ((b * 65536) + a);
+            }
+        }
+
+        private static readonly int Modulus = 65521;
+
+        public void Update(byte[] data, int offset, int length)
+        {
+            for (int counter = 0; counter < length; ++counter)
+            {
+                a = (a + (data[offset + counter])) % Modulus;
+                b = (b + a) % Modulus;
+            }
         }
     }
 
@@ -283,21 +308,36 @@ namespace UAssetTools
         public Int32 BulkDataSizeOnDisk;
         public Int64 BulkDataOffsetInFile;
         public byte[] BulkData;
-        public bool bPayloadInline;
+        public byte[] BulkDataDecompressed;
+        public bool bPayloadAtEndOfFile;
+        public bool bCompressed;
+
+        public Int64 PackageFileTag;
+        public Int64 CompressionChunkSize;
+        public Int64 CompressedSize;
+        public Int64 UncompressedSize;
+        public Int64 TotalChunkCount;
+        public List<KeyValuePair<Int64, Int64>> ChanksInfo;
 
         public Int64 BulkDataOffsetInFileOffset;
 
-        public void DeSerialize(FileStream fs)
+        public UntypedBulkData()
+        {
+            ChanksInfo = new List<KeyValuePair<long, long>>();
+        }
+
+        public void DeSerialize(Stream fs)
         {
             BulkDataFlags = ReadUInt32(fs);
 
-            bPayloadInline = ((BulkDataFlags & 0x01) != 0x01);
+            bPayloadAtEndOfFile = ((BulkDataFlags & 0x01) == 0x01);
+            bCompressed = ((BulkDataFlags & 0x02) == 0x02);
 
             ElementCount = ReadInt32(fs);
             BulkDataSizeOnDisk = ReadInt32(fs);
             BulkDataOffsetInFile = ReadInt64(fs);
 
-            if (bPayloadInline)
+            if (!bPayloadAtEndOfFile)
             {
                 BulkData = new byte[BulkDataSizeOnDisk];
                 fs.Read(BulkData, 0, BulkDataSizeOnDisk);
@@ -310,14 +350,104 @@ namespace UAssetTools
                 fs.Read(BulkData, 0, BulkDataSizeOnDisk);
                 fs.Seek(nCurOffset, SeekOrigin.Begin);
             }
+
+            if (bCompressed)
+            {
+                MemoryStream ms = new MemoryStream(BulkData);
+                PackageFileTag = ReadInt64(ms);
+                CompressionChunkSize = ReadInt64(ms);
+                CompressedSize = ReadInt64(ms);
+                UncompressedSize = ReadInt64(ms);
+                TotalChunkCount = (UncompressedSize + CompressionChunkSize - 1) / CompressionChunkSize;
+                for (int i = 0; i < TotalChunkCount; i++)
+                {
+                    ChanksInfo.Add(new KeyValuePair<long, long>(ReadInt64(ms), ReadInt64(ms)));
+                }
+                BulkDataDecompressed = new byte[ElementCount];
+                MemoryStream ms_decompressed = new MemoryStream(BulkDataDecompressed);
+                Int64 CurrentOffset = ms.Position;
+                for (int i = 0; i < ChanksInfo.Count; i++)
+                {
+                    ms.Seek(CurrentOffset + 2, SeekOrigin.Begin);
+                    System.IO.Compression.DeflateStream fs_decompressed = new System.IO.Compression.DeflateStream(ms, System.IO.Compression.CompressionMode.Decompress, true);
+                    fs_decompressed.CopyTo(ms_decompressed);
+                    fs_decompressed.Close();
+                    CurrentOffset += ChanksInfo[i].Key;
+                }
+            }
         }
 
-        public void Serialize(FileStream fs)
+        public void Serialize(Stream fs)
         {
+            bPayloadAtEndOfFile = ((BulkDataFlags & 0x01) == 0x01);
+            bCompressed = ((BulkDataFlags & 0x02) == 0x02);
+
+            if (bCompressed)
+            {
+                MemoryStream ms = new MemoryStream();
+                WriteInt64(ms, PackageFileTag);
+                WriteInt64(ms, CompressionChunkSize);
+
+                Int64 CompressedSizeOffset = ms.Position; WriteInt64(ms, 0);
+                WriteInt64(ms, BulkDataDecompressed.Length);
+
+                TotalChunkCount = (BulkDataDecompressed.Length + CompressionChunkSize - 1) / CompressionChunkSize;
+
+                List<Int64> ChanksOffsetInfo = new List<Int64>();
+
+                for (int j = 0; j < TotalChunkCount; j++)
+                {
+                    ChanksOffsetInfo.Add(ms.Position);
+                    WriteInt64(ms, 0);
+                    WriteInt64(ms, 0);
+                }
+
+                int nCurrentOffset = 0;
+                int i = 0;
+                Int64 nTotalSize = 0;
+                while (nCurrentOffset < BulkDataDecompressed.Length)
+                {
+                    ms.Seek(0, SeekOrigin.End);
+                    Int64 CurrentCompressionChunkSize = CompressionChunkSize;
+                    if (BulkDataDecompressed.Length - nCurrentOffset < CurrentCompressionChunkSize)
+                        CurrentCompressionChunkSize = BulkDataDecompressed.Length - nCurrentOffset;
+                    MemoryStream ms_src = new MemoryStream(BulkDataDecompressed, nCurrentOffset, (int)CurrentCompressionChunkSize);
+                    nCurrentOffset += (int)CurrentCompressionChunkSize;
+                    Int64 nCurFsOffset = ms.Position;
+                    WriteUInt16(ms, 0x9C78);
+                    System.IO.Compression.DeflateStream ms_compressed = new System.IO.Compression.DeflateStream(ms, System.IO.Compression.CompressionLevel.Optimal, true);
+                    ms_src.CopyTo(ms_compressed);
+                    ms_compressed.Close();
+                    Adler32Computer ad32 = new Adler32Computer();
+                    byte[] BufForAdlerCalc = new byte[ms_src.Length];
+                    ms_src.Seek(0, SeekOrigin.Begin);
+                    ms_src.Read(BufForAdlerCalc, 0, BufForAdlerCalc.Length);
+                    ad32.Update(BufForAdlerCalc, 0, BufForAdlerCalc.Length);
+                    byte[] AdlerRes = BitConverter.GetBytes(ad32.Checksum);
+                    WriteByte(ms, AdlerRes[3]);
+                    WriteByte(ms, AdlerRes[2]);
+                    WriteByte(ms, AdlerRes[1]);
+                    WriteByte(ms, AdlerRes[0]);
+                    Int64 nNewFsOffset = ms.Position;
+                    ms.Seek(ChanksOffsetInfo[i], SeekOrigin.Begin);
+                    WriteInt64(ms, nNewFsOffset - nCurFsOffset);
+                    nTotalSize += nNewFsOffset - nCurFsOffset;
+                    WriteInt64(ms, CurrentCompressionChunkSize);
+                    i++;
+                }
+
+                ms.Seek(CompressedSizeOffset, SeekOrigin.Begin);
+                WriteInt64(ms, nTotalSize);
+
+                BulkData = new byte[ms.Length];
+                ms.Seek(0, SeekOrigin.Begin);
+                ms.Read(BulkData, 0, BulkData.Length);
+            }
+
             WriteUInt32(fs, BulkDataFlags);
-            WriteInt32(fs, BulkData.Length); // ElementCount == BulkData.Length ???
+            WriteInt32(fs, BulkDataDecompressed.Length);
             WriteInt32(fs, BulkData.Length);
-            if (bPayloadInline)
+            if (!bPayloadAtEndOfFile)
             {
                 WriteInt64(fs, fs.Position + 8);
                 fs.Write(BulkData, 0, BulkData.Length);
@@ -345,7 +475,7 @@ namespace UAssetTools
             BulkData = new UntypedBulkData();
         }
 
-        public void DeSerialize(FileStream fs)
+        public void DeSerialize(Stream fs)
         {
             bCooked = ReadBool(fs);
             BulkData.DeSerialize(fs);
@@ -353,7 +483,7 @@ namespace UAssetTools
             SizeY = ReadInt32(fs);
         }
 
-        public void Serialize(FileStream fs)
+        public void Serialize(Stream fs)
         {
             WriteBool(fs, bCooked);
             BulkData.Serialize(fs);
@@ -377,7 +507,7 @@ namespace UAssetTools
             Mips = new List<Texture2DMipMap>();
         }
 
-        public void DeSerialize(FileStream fs)
+        public void DeSerialize(Stream fs)
         {
             SizeX = ReadInt32(fs);
             SizeY = ReadInt32(fs);
@@ -392,7 +522,7 @@ namespace UAssetTools
             }
         }
 
-        public void Serialize(FileStream fs)
+        public void Serialize(Stream fs)
         {
             WriteInt32(fs, SizeX);
             WriteInt32(fs, SizeY);
@@ -417,7 +547,7 @@ namespace UAssetTools
             BulkData = new UntypedBulkData();
         }
 
-        public void DeSerialize(FileStream fs)
+        public void DeSerialize(Stream fs)
         {
             NumFormats = ReadInt32(fs);
             if (NumFormats != 1)
@@ -427,11 +557,35 @@ namespace UAssetTools
             BulkData.DeSerialize(fs);
         }
 
-        public void Serialize(FileStream fs)
+        public void Serialize(Stream fs)
         {
             WriteInt32(fs, NumFormats);
             Name.Serialize(fs);
             BulkData.Serialize(fs);
+        }
+    }
+
+    public class CompositeFont : StructProperty
+    {
+        public void DeSerialize(Stream fs)
+        {
+            base.DeSerialize(fs);
+        }
+    }
+
+    public class Typeface : StructProperty
+    {
+        public void DeSerialize(Stream fs)
+        {
+            base.DeSerialize(fs);
+        }
+    }
+
+    public class FontData : StructProperty
+    {
+        public void DeSerialize(Stream fs)
+        {
+            base.DeSerialize(fs);
         }
     }
 }

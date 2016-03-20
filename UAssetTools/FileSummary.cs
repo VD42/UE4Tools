@@ -11,14 +11,14 @@ namespace UAssetTools
         public Int32 Version;
         public string FriendlyName;
 
-        public void DeSerialize(FileStream fs)
+        public void DeSerialize(Stream fs)
         {
             Key = ReadGuid(fs);
             Version = ReadInt32(fs);
             FriendlyName = ReadString(fs);
         }
 
-        public void Serialize(FileStream fs)
+        public void Serialize(Stream fs)
         {
             WriteGuid(fs, Key);
             WriteInt32(fs, Version);
@@ -82,7 +82,7 @@ namespace UAssetTools
             BulkDataStartOffset = 0;
         }
 
-        public void DeSerialize(FileStream fs)
+        public void DeSerialize(Stream fs)
         {
             fs.Seek(0, SeekOrigin.Begin);
             Tag = ReadInt32(fs);
@@ -159,7 +159,7 @@ namespace UAssetTools
                 ChunkIDs.Add(ReadInt32(fs));
         }
 
-        public void Serialize(FileStream fs)
+        public void Serialize(Stream fs)
         {
             WriteInt32(fs, Tag);
             WriteInt32(fs, LegacyFileVersion);
@@ -201,7 +201,7 @@ namespace UAssetTools
                WriteInt32(fs, ChunkIDs[i]);
         }
 
-        public void Correction(FileStream fs, Int32 TotalHeaderSize, Int32 NameCount, Int32 NameOffset, Int32 ExportCount, Int32 ExportOffset, Int32 ImportCount, Int32 ImportOffset, Int32 BulkDataStartOffset, Int32 DependsOffset, Int32 StringAssetReferencesOffset, Int32 AssetRegistryDataOffset)
+        public void Correction(Stream fs, Int32 TotalHeaderSize, Int32 NameCount, Int32 NameOffset, Int32 ExportCount, Int32 ExportOffset, Int32 ImportCount, Int32 ImportOffset, Int32 BulkDataStartOffset, Int32 DependsOffset, Int32 StringAssetReferencesOffset, Int32 AssetRegistryDataOffset)
         {
             Int64 nCurrentPosition = fs.Position;
 

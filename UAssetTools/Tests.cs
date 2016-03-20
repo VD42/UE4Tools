@@ -66,5 +66,14 @@ namespace UAssetTools
             //Assert.IsTrue(OpenSave("C:\\Program Files (x86)\\Steam\\SteamApps\\common\\The Park\\AtlanticIslandPark\\Content\\Maps\\AtlanticIslandPark\\AIP_Gameplay1.umap", true));
             Assert.IsTrue(OpenSave("C:\\Program Files (x86)\\Steam\\SteamApps\\common\\The Park\\AtlanticIslandPark\\Content\\UI\\MainMenu\\MainMenu.uasset", true));
         }
+
+        [TestMethod]
+        public void TestFont()
+        {
+            Assert.IsTrue(OpenSave("..\\..\\Tests\\Font_1.uasset"));
+            Assert.IsTrue(OpenSave("..\\..\\Tests\\Font_2.uasset"));
+            Assert.IsTrue(OpenSave("..\\..\\Tests\\Font_3.uasset"));
+            Assert.IsTrue(OpenSave("..\\..\\Tests\\Font_4.uasset"));
+        }
     }
 }
