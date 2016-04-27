@@ -211,6 +211,9 @@ namespace UAssetTools
                     case "StrProperty":
                         Properties.Add(new KeyValuePair<PropertyTag, object>(Tag, ReadString(fs)));
                         break;
+                    case "DARK11DistanceField_01_PageDG":
+                        Properties.Add(new KeyValuePair<PropertyTag, object>(Tag, null));
+                        break;
                     default:
                         throw new Exception("Unknown type!");
                 }

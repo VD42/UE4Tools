@@ -74,6 +74,8 @@ namespace UAssetTools
             Assert.IsTrue(OpenSave("..\\..\\Tests\\Font_2.uasset"));
             Assert.IsTrue(OpenSave("..\\..\\Tests\\Font_3.uasset"));
             Assert.IsTrue(OpenSave("..\\..\\Tests\\Font_4.uasset"));
+            Assert.IsTrue(OpenSave("..\\..\\Tests\\Font_5.uasset"));
+            Assert.IsTrue(OpenSave("..\\..\\Tests\\Font_6.uasset"));
         }
     }
 }

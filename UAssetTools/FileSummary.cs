@@ -39,6 +39,8 @@ namespace UAssetTools
         public UInt32 PackageFlags;
         public Int32 NameCount;
         public Int32 NameOffset;
+        public Int32 GatherableTextDataCount;
+        public Int32 GatherableTextDataOffset;
         public Int32 ExportCount;
         public Int32 ExportOffset;
         public Int32 ImportCount;
@@ -107,8 +109,13 @@ namespace UAssetTools
                 throw new Exception("Flag must be set!");
             NameCount = ReadInt32(fs);
             NameOffset = ReadInt32(fs);
-            if (FileVersionUE4 >= 459)
-                throw new Exception("This version not supported!");
+            if (FileVersionUE4 >= 459) // VER_UE4_SERIALIZE_TEXT_IN_PACKAGES
+            {
+                GatherableTextDataCount = ReadInt32(fs);
+                if (GatherableTextDataCount > 0)
+                    throw new Exception("GatherableTextDataCount not supported!");
+                GatherableTextDataOffset = ReadInt32(fs);
+            }
             ExportCount = ReadInt32(fs);
             ExportOffset = ReadInt32(fs);
             ImportCount = ReadInt32(fs);
@@ -174,6 +181,11 @@ namespace UAssetTools
             WriteUInt32(fs, PackageFlags);
             NameCountOffset = fs.Position; WriteInt32(fs, 0); // POST: NameCount
             NameOffsetOffset = fs.Position; WriteInt32(fs, 0); // POST: NameOffset
+            if (FileVersionUE4 >= 459) // VER_UE4_SERIALIZE_TEXT_IN_PACKAGES
+            {
+                WriteInt32(fs, 0); // GatherableTextDataCount
+                WriteInt32(fs, 0); // GatherableTextDataOffset
+            }
             ExportCountOffset = fs.Position; WriteInt32(fs, 0); // POST: ExportCount
             ExportOffsetOffset = fs.Position; WriteInt32(fs, 0); // POST: ExportOffset
             ImportCountOffset = fs.Position; WriteInt32(fs, 0); // POST: ImportCount
