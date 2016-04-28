@@ -601,43 +601,33 @@ namespace UAssetTools
         }
     }
 
-    public class DARK11DistanceField : StructProperty
+    public class FontCharacter : StructProperty
     {
-        byte[] Something1;
-        Int64 Something2;
-        byte[] Something3;
-        TexturePlatformData Data1;
-        byte[] Something4;
-        TexturePlatformData Data2;
-
-        public DARK11DistanceField()
-        {
-            Something1 = new byte[5352];
-            Something3 = new byte[24];
-            Data1 = new TexturePlatformData();
-            Something4 = new byte[24];
-            Data2 = new TexturePlatformData();
-        }
+        public Int32 StartU;
+        public Int32 StartV;
+        public Int32 USize;
+        public Int32 VSize;
+        public byte TextureIndex;
+        public Int32 VerticalOffset;
 
         public void DeSerialize(Stream fs)
         {
-            fs.Read(Something1, 0, 5352);
-            base.DeSerialize(fs);
-            Something2 = ReadInt64(fs);
+            StartU = ReadInt32(fs);
+            StartV = ReadInt32(fs);
+            USize = ReadInt32(fs);
+            VSize = ReadInt32(fs);
+            TextureIndex = ReadByte(fs);
+            VerticalOffset = ReadInt32(fs);
+        }
 
-            for (int i = 0; i < 89; i++)
-            {
-                Data1 = new TexturePlatformData();
-                base.DeSerialize(fs);
-                fs.Read(Something3, 0, 24);
-                Data1.DeSerialize(fs);
-                base.DeSerialize(fs);
-
-                FileStream fs_t = new FileStream(Path.Combine("C:\\Users\\vladi\\Dropbox\\research\\textures", i + ".dds"), FileMode.Create);
-                Program.WriteDDSHeaderG8(fs_t, Data1.Mips[0].SizeX, Data1.Mips[0].SizeY);
-                fs_t.Write(Data1.Mips[0].BulkData.BulkData, 0, Data1.Mips[0].BulkData.BulkData.Length);
-                fs_t.Close();
-            }
+        public void Serialize(Stream fs)
+        {
+            WriteInt32(fs, StartU);
+            WriteInt32(fs, StartV);
+            WriteInt32(fs, USize);
+            WriteInt32(fs, VSize);
+            WriteByte(fs, TextureIndex);
+            WriteInt32(fs, VerticalOffset);
         }
     }
 }

@@ -137,13 +137,27 @@ namespace UAssetTools
                         switch (sInnerType)
                         {
                             case "StructProperty":
-                                List<StructProperty> sps = new List<StructProperty>();
-                                for (int i = 0; i < nElementCount; i++)
+                                if (sName == "Characters")
                                 {
-                                    sps.Add(new StructProperty());
-                                    sps[i].DeSerialize(fs);
+                                    // Need native serialization
+                                    List<FontCharacter> fcs = new List<FontCharacter>();
+                                    for (int i = 0; i < nElementCount; i++)
+                                    {
+                                        fcs.Add(new FontCharacter());
+                                        fcs[i].DeSerialize(fs);
+                                    }
+                                    Properties.Add(new KeyValuePair<PropertyTag, object>(Tag, fcs));
                                 }
-                                Properties.Add(new KeyValuePair<PropertyTag, object>(Tag, sps));
+                                else
+                                {
+                                    List<StructProperty> sps = new List<StructProperty>();
+                                    for (int i = 0; i < nElementCount; i++)
+                                    {
+                                        sps.Add(new StructProperty());
+                                        sps[i].DeSerialize(fs);
+                                    }
+                                    Properties.Add(new KeyValuePair<PropertyTag, object>(Tag, sps));
+                                }
                                 break;
                             case "TextProperty":
                                 List<Text> tps = new List<Text>();
@@ -222,11 +236,6 @@ namespace UAssetTools
                     case "StrProperty":
                         Properties.Add(new KeyValuePair<PropertyTag, object>(Tag, ReadString(fs)));
                         break;
-                    case "DARK11DistanceField_01_PageDG":
-                        DARK11DistanceField df = new DARK11DistanceField();
-                        df.DeSerialize(fs);
-                        Properties.Add(new KeyValuePair<PropertyTag, object>(Tag, df));
-                        break;
                     default:
                         throw new Exception("Unknown type!");
                 }
@@ -274,20 +283,45 @@ namespace UAssetTools
                         switch (sInnerType)
                         {
                             case "StructProperty":
-                                nStartPosition = fs.Position;
-                                WriteInt32(fs, ((List<StructProperty>)Properties[i].Value).Count);
-                                for (int j = 0; j < ((List<StructProperty>)Properties[i].Value).Count; j++)
-                                    ((List<StructProperty>)Properties[i].Value)[j].Serialize(fs);
-                                nCurrentPosition = fs.Position;
-                                fs.Seek(Properties[i].Key.SizeOffset, SeekOrigin.Begin);
-                                WriteInt32(fs, (Int32)(nCurrentPosition - nStartPosition));
-                                fs.Seek(nCurrentPosition, SeekOrigin.Begin);
+                                if (sName == "Characters")
+                                {
+                                    // Need native serialization
+                                    nStartPosition = fs.Position;
+                                    WriteInt32(fs, ((List<FontCharacter>)Properties[i].Value).Count);
+                                    for (int j = 0; j < ((List<FontCharacter>)Properties[i].Value).Count; j++)
+                                        ((List<FontCharacter>)Properties[i].Value)[j].Serialize(fs);
+                                    nCurrentPosition = fs.Position;
+                                    fs.Seek(Properties[i].Key.SizeOffset, SeekOrigin.Begin);
+                                    WriteInt32(fs, (Int32)(nCurrentPosition - nStartPosition));
+                                    fs.Seek(nCurrentPosition, SeekOrigin.Begin);
+                                }
+                                else
+                                {
+                                    nStartPosition = fs.Position;
+                                    WriteInt32(fs, ((List<StructProperty>)Properties[i].Value).Count);
+                                    for (int j = 0; j < ((List<StructProperty>)Properties[i].Value).Count; j++)
+                                        ((List<StructProperty>)Properties[i].Value)[j].Serialize(fs);
+                                    nCurrentPosition = fs.Position;
+                                    fs.Seek(Properties[i].Key.SizeOffset, SeekOrigin.Begin);
+                                    WriteInt32(fs, (Int32)(nCurrentPosition - nStartPosition));
+                                    fs.Seek(nCurrentPosition, SeekOrigin.Begin);
+                                }
                                 break;
                             case "TextProperty":
                                 nStartPosition = fs.Position;
                                 WriteInt32(fs, ((List<Text>)Properties[i].Value).Count);
                                 for (int j = 0; j < ((List<Text>)Properties[i].Value).Count; j++)
                                     ((List<Text>)Properties[i].Value)[j].Serialize(fs);
+                                nCurrentPosition = fs.Position;
+                                fs.Seek(Properties[i].Key.SizeOffset, SeekOrigin.Begin);
+                                WriteInt32(fs, (Int32)(nCurrentPosition - nStartPosition));
+                                fs.Seek(nCurrentPosition, SeekOrigin.Begin);
+                                break;
+                            case "ObjectProperty":
+                                nStartPosition = fs.Position;
+                                WriteInt32(fs, ((List<Int32>)Properties[i].Value).Count);
+                                for (int j = 0; j < ((List<Int32>)Properties[i].Value).Count; j++)
+                                    WriteInt32(fs, ((List<Int32>)Properties[i].Value)[j]);
                                 nCurrentPosition = fs.Position;
                                 fs.Seek(Properties[i].Key.SizeOffset, SeekOrigin.Begin);
                                 WriteInt32(fs, (Int32)(nCurrentPosition - nStartPosition));
@@ -329,6 +363,14 @@ namespace UAssetTools
                             case "FontData":
                                 nStartPosition = fs.Position;
                                 ((FontData)Properties[i].Value).Serialize(fs);
+                                nCurrentPosition = fs.Position;
+                                fs.Seek(Properties[i].Key.SizeOffset, SeekOrigin.Begin);
+                                WriteInt32(fs, (Int32)(nCurrentPosition - nStartPosition));
+                                fs.Seek(nCurrentPosition, SeekOrigin.Begin);
+                                break;
+                            case "FontImportOptionsData":
+                                nStartPosition = fs.Position;
+                                ((FontImportOptionsData)Properties[i].Value).Serialize(fs);
                                 nCurrentPosition = fs.Position;
                                 fs.Seek(Properties[i].Key.SizeOffset, SeekOrigin.Begin);
                                 WriteInt32(fs, (Int32)(nCurrentPosition - nStartPosition));
