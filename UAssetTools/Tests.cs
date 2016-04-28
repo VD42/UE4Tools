@@ -64,7 +64,7 @@ namespace UAssetTools
         public void TestSomething()
         {
             //Assert.IsTrue(OpenSave("C:\\Program Files (x86)\\Steam\\SteamApps\\common\\The Park\\AtlanticIslandPark\\Content\\Maps\\AtlanticIslandPark\\AIP_Gameplay1.umap", true));
-            Assert.IsTrue(OpenSave("C:\\Program Files (x86)\\Steam\\SteamApps\\common\\The Park\\AtlanticIslandPark\\Content\\UI\\MainMenu\\MainMenu.uasset", true));
+            //Assert.IsTrue(OpenSave("C:\\Program Files (x86)\\Steam\\SteamApps\\common\\The Park\\AtlanticIslandPark\\Content\\UI\\MainMenu\\MainMenu.uasset", true));
         }
 
         [TestMethod]

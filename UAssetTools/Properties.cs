@@ -154,6 +154,12 @@ namespace UAssetTools
                                 }
                                 Properties.Add(new KeyValuePair<PropertyTag, object>(Tag, tps));
                                 break;
+                            case "ObjectProperty":
+                                List<Int32> objects = new List<Int32>();
+                                for (int i = 0; i < nElementCount; i++)
+                                    objects.Add(ReadInt32(fs));
+                                Properties.Add(new KeyValuePair<PropertyTag, object>(Tag, objects));
+                                break;
                             default:
                                 throw new Exception("Unknown type!");
                         }
@@ -181,6 +187,11 @@ namespace UAssetTools
                                 FontData fd = new FontData();
                                 fd.DeSerialize(fs);
                                 Properties.Add(new KeyValuePair<PropertyTag, object>(Tag, fd));
+                                break;
+                            case "FontImportOptionsData":
+                                FontImportOptionsData fiod = new FontImportOptionsData();
+                                fiod.DeSerialize(fs);
+                                Properties.Add(new KeyValuePair<PropertyTag, object>(Tag, fiod));
                                 break;
                             default:
                                 throw new Exception("Unknown type!");
@@ -212,7 +223,9 @@ namespace UAssetTools
                         Properties.Add(new KeyValuePair<PropertyTag, object>(Tag, ReadString(fs)));
                         break;
                     case "DARK11DistanceField_01_PageDG":
-                        Properties.Add(new KeyValuePair<PropertyTag, object>(Tag, null));
+                        DARK11DistanceField df = new DARK11DistanceField();
+                        df.DeSerialize(fs);
+                        Properties.Add(new KeyValuePair<PropertyTag, object>(Tag, df));
                         break;
                     default:
                         throw new Exception("Unknown type!");

@@ -237,7 +237,7 @@ namespace UAssetTools
             fs.Write(header, 0, header.Length);
         }
 
-        static void WriteDDSHeaderG8(Stream fs, int nWidth, int nHeight)
+        public static void WriteDDSHeaderG8(Stream fs, int nWidth, int nHeight)
         {
             byte[] header = new byte[128];
 
