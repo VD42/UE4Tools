@@ -241,7 +241,7 @@ namespace UAssetTools
         public void SerializeDependsMap(Stream fs)
         {
             DependsOffset = fs.Position;
-            for (int i = 0; i < PackageFileSummary.ExportCount; i++)
+            for (int i = 0; i < DependsMap.Count; i++)
             {
                 WriteInt32(fs, DependsMap[i].Count);
                 for (int j = 0; j < DependsMap[i].Count; j++)

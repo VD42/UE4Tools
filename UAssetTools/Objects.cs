@@ -25,7 +25,7 @@ namespace UAssetTools
         }
     }
 
-    public class Texture2D : Object
+    public class Texture2D : Object, ICloneable
     {
         public Int32 Something1; // ???
         public Int16 Something2; // ???
@@ -46,6 +46,11 @@ namespace UAssetTools
             PixelFormatName1 = new Name();
             PixelFormatName2 = new Name();
             Data = new TexturePlatformData();
+        }
+
+        public object Clone()
+        {
+            return this.MemberwiseClone();
         }
 
         public override void DeSerialize(Stream fs)

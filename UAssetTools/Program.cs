@@ -309,6 +309,83 @@ namespace UAssetTools
             }
         }
 
+        public class HieroInfo
+        {
+            public class CharInfo
+            {
+                public int Code;
+                public int X;
+                public int Y;
+                public int SizeX;
+                public int SizeY;
+                public int TextureIndex;
+            }
+
+            public string Path;
+            public string Name;
+            public int TexturesCount;
+            public List<CharInfo> Chars;
+
+            public HieroInfo()
+            {
+                Chars = new List<CharInfo>();
+            }
+
+            public byte[] GetTexture(int index)
+            {
+                string temp = System.IO.Path.GetTempFileName();
+                File.Move(temp, temp + ".dds");
+                System.Diagnostics.Process nvdxt = System.Diagnostics.Process.Start(System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().GetName().CodeBase), "ThirdParty\\nvdxt.exe"), "-file \"" + System.IO.Path.Combine(Path, Name + (index + 1) + ".png") + "\" -norm -alpha -a8 -nomipmap -quality_production -output \"" + (temp + ".dds") + "\"");
+                nvdxt.WaitForExit();
+                FileStream fs = new FileStream(temp + ".dds", FileMode.Open);
+                fs.Seek(124 + 4, SeekOrigin.Begin);
+                byte[] BulkData = new byte[fs.Length - 124 - 4];
+                fs.Read(BulkData, 0, BulkData.Length);
+                fs.Close();
+                return BulkData;
+            }
+        }
+
+        public static HieroInfo GetHieroInfo(string path)
+        {
+            HieroInfo info = new HieroInfo();
+            info.Path = Path.GetDirectoryName(path);
+            info.Name = Path.GetFileNameWithoutExtension(path);
+            StreamReader sr = new StreamReader(path);
+            while (!sr.EndOfStream)
+            {
+                string line = sr.ReadLine();
+                if (line.Substring(0, 7) == "common ")
+                {
+                    line = line.Substring(line.IndexOf("pages=") + 6);
+                    info.TexturesCount = int.Parse(line.Substring(0, line.IndexOf(" ")));
+                }
+                if (line.Substring(0, 5) == "char ")
+                {
+                    info.Chars.Add(new HieroInfo.CharInfo());
+
+                    line = line.Substring(line.IndexOf("id=") + 3);
+                    info.Chars[info.Chars.Count - 1].Code = int.Parse(line.Substring(0, line.IndexOf(" ")));
+
+                    line = line.Substring(line.IndexOf("x=") + 2);
+                    info.Chars[info.Chars.Count - 1].X = int.Parse(line.Substring(0, line.IndexOf(" ")));
+
+                    line = line.Substring(line.IndexOf("y=") + 2);
+                    info.Chars[info.Chars.Count - 1].Y = int.Parse(line.Substring(0, line.IndexOf(" ")));
+
+                    line = line.Substring(line.IndexOf("width=") + 6);
+                    info.Chars[info.Chars.Count - 1].SizeX = int.Parse(line.Substring(0, line.IndexOf(" ")));
+
+                    line = line.Substring(line.IndexOf("height=") + 7);
+                    info.Chars[info.Chars.Count - 1].SizeY = int.Parse(line.Substring(0, line.IndexOf(" ")));
+
+                    line = line.Substring(line.IndexOf("page=") + 5);
+                    info.Chars[info.Chars.Count - 1].TextureIndex = byte.Parse(line.Substring(0, line.IndexOf(" ")));
+                }
+            }
+            return info;
+        }
+
         static void Main(string[] args)
         {
             if (args.Length != 3)
@@ -808,6 +885,139 @@ namespace UAssetTools
                                 fs.Close();
                             }
                         }
+                        asset.SavePackageFile(args[1]);
+                    }
+                    break;
+                case "font_pack_df":
+                    // font_pack_df "C:\Users\vladi\Dropbox\research\DARK11DistanceField_01.uasset" "C:\Users\vladi\Documents\hiero_test\font.fnt"
+                    {
+                        PackageReader asset = new PackageReader();
+                        asset.OpenPackageFile(args[1]);
+                        if (asset.ExportMap[0].Object.GetType() != typeof(Font))
+                            throw new Exception("Invalid font");
+                        Font font = (Font)asset.ExportMap[0].Object;
+
+                        int Index_IntProperty = -1;
+                        int Index_IsRemapped = -1;
+                        int Index_Characters = -1;
+                        int Index_Textures = -1;
+                        int Index_PF_G8 = -1;
+                        for (int i = 0; i < PackageReader.NameMap.Count; i++)
+                        {
+                            if (PackageReader.NameMap[i] == "IntProperty")
+                                Index_IntProperty = i;
+                            if (PackageReader.NameMap[i] == "IsRemapped")
+                                Index_IsRemapped = i;
+                            if (PackageReader.NameMap[i] == "Characters")
+                                Index_Characters = i;
+                            if (PackageReader.NameMap[i] == "Textures")
+                                Index_Textures = i;
+                            if (PackageReader.NameMap[i] == "PF_G8")
+                                Index_PF_G8 = i;
+                        }
+                        PackageReader.NameMap[Index_PF_G8] = "PF_A8";
+                        if (Index_IntProperty == -1)
+                        {
+                            Index_IntProperty = PackageReader.NameMap.Count;
+                            PackageReader.NameMap.Add("IntProperty");
+                        }
+                        if (Index_IsRemapped == -1)
+                        {
+                            Index_IsRemapped = PackageReader.NameMap.Count;
+                            PackageReader.NameMap.Add("IsRemapped");
+                        }
+                        if (Index_Characters == -1)
+                        {
+                            Index_Characters = PackageReader.NameMap.Count;
+                            PackageReader.NameMap.Add("Characters");
+                        }
+                        if (Index_Textures == -1)
+                        {
+                            Index_Textures = PackageReader.NameMap.Count;
+                            PackageReader.NameMap.Add("Textures");
+                        }
+                        int PropIndex_IsRemapped = -1;
+                        for (int i = 0; i < font.Properties.Properties.Count; i++)
+                        {
+                            if (font.Properties.Properties[i].Key.Name.ComparisonIndex == Index_IsRemapped)
+                                PropIndex_IsRemapped = i;
+                        }
+                        if (PropIndex_IsRemapped == -1)
+                        {
+                            PropertyTag tag = new PropertyTag()
+                            {
+                                Size = 4,
+                                Name = new Name() { ComparisonIndex = Index_IsRemapped, Number = 0 },
+                                Type = new Name() { ComparisonIndex = Index_IntProperty, Number = 0 }
+                            };
+                            font.Properties.Properties.Insert(font.Properties.Properties.Count - 1, new KeyValuePair<PropertyTag, object>(tag, (Int32)1));
+                        }
+                        else
+                        {
+                            font.Properties.Properties[PropIndex_IsRemapped] = new KeyValuePair<PropertyTag, object>(font.Properties.Properties[PropIndex_IsRemapped].Key, (Int32)1);
+                        }
+                        int PropIndex_Characters = -1;
+                        for (int i = 0; i < font.Properties.Properties.Count; i++)
+                        {
+                            if (font.Properties.Properties[i].Key.Name.ComparisonIndex == Index_Characters)
+                                PropIndex_Characters = i;
+                        }
+                        HieroInfo hieroInfo = GetHieroInfo(args[2]);
+                        int CharsCount = hieroInfo.Chars.Count;
+                        List<FontCharacter> Characters = new List<FontCharacter>();
+                        for (int i = 0; i < CharsCount; i++)
+                        {
+                            int nRealCharCode = hieroInfo.Chars[i].Code;
+                            Characters.Add(new FontCharacter()
+                            {
+                                StartU = hieroInfo.Chars[i].X,
+                                StartV = hieroInfo.Chars[i].Y,
+                                USize = hieroInfo.Chars[i].SizeX,
+                                VSize = hieroInfo.Chars[i].SizeY,
+                                TextureIndex = (byte)hieroInfo.Chars[i].TextureIndex
+                            });
+                            font.CharRemap.Add((UInt16)nRealCharCode, (UInt16)i);
+                        }
+                        font.Properties.Properties[PropIndex_Characters] = new KeyValuePair<PropertyTag, object>(font.Properties.Properties[PropIndex_Characters].Key, Characters);
+                        int PropIndex_Textures = -1;
+                        for (int i = 0; i < font.Properties.Properties.Count; i++)
+                        {
+                            if (font.Properties.Properties[i].Key.Name.ComparisonIndex == Index_Textures)
+                                PropIndex_Textures = i;
+                        }
+                        if (PropIndex_Textures == -1 || asset.ExportMap.Count - 1 != ((List<Int32>)font.Properties.Properties[PropIndex_Textures].Value).Count)
+                            throw new Exception("Invalid font");
+                        int TexturesCount = hieroInfo.TexturesCount;
+                        List<Int32> TextureIndexes = new List<int>();
+                        List<ObjectExport> NewObjectExportMap = new List<ObjectExport>();
+                        List<List<int>> NewDependsMap = new List<List<int>>();
+                        NewObjectExportMap.Add(asset.ExportMap[0]);
+                        NewDependsMap.Add(new List<int>());
+                        string sName = PackageReader.NameMap[asset.ExportMap[0].ObjectName.ComparisonIndex];
+                        for (int i = 0; i < TexturesCount; i++)
+                        {
+                            Texture2D texture = (Texture2D)asset.ExportMap[1].Object;
+                            texture.Data.Mips[0].BulkData.BulkData = hieroInfo.GetTexture(i);
+                            texture.Data.PixelFormatString = "PF_A8";
+                            TextureIndexes.Add(i + 2);
+                            int Index_Name = PackageReader.NameMap.Count;
+                            PackageReader.NameMap.Add(sName + "_Page" + i);
+                            ObjectExport objectExport = new ObjectExport()
+                            {
+                                ClassIndex = -2,
+                                ObjectFlags = 1,
+                                ObjectName = new Name() { ComparisonIndex = Index_Name, Number = 0 },
+                                OuterIndex = 1,
+                                bNotForEditorGame = true,
+                                Object = texture
+                            };
+                            NewObjectExportMap.Add(objectExport);
+                            NewDependsMap[0].Add(i + 2);
+                            NewDependsMap.Add(new List<int>());
+                        }
+                        asset.ExportMap = NewObjectExportMap;
+                        asset.DependsMap = NewDependsMap;
+                        font.Properties.Properties[PropIndex_Textures] = new KeyValuePair<PropertyTag, object>(font.Properties.Properties[PropIndex_Textures].Key, TextureIndexes);
                         asset.SavePackageFile(args[1]);
                     }
                     break;
