@@ -5,6 +5,23 @@ using System.IO;
 
 namespace UAssetTools
 {
+    public class FName
+    {
+        public Int32 ComparisonIndex;
+        public UInt32 Number;
+
+        public void Serialize(FArchive ar)
+        {
+            ComparisonIndex.Serialize(ar);
+            Number.Serialize(ar);
+        }
+
+        public override string ToString()
+        {
+            return PackageReader.NameMap[ComparisonIndex];
+        }
+    }
+
     public class GenerationInfo : BinaryHelper
     {
         Int32 ExportCount;
