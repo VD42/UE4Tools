@@ -201,7 +201,7 @@ namespace UAssetTools
 
             header[76] = 0x20;
 
-            header[80] = 0x42;
+            header[80] = 0x41;
 
             header[88] = 0x20;
             header[89] = 0x00;
@@ -210,27 +210,27 @@ namespace UAssetTools
 
             // R
             header[92] = 0x00;
-            header[93] = 0xFF;
-            header[94] = 0x00;
+            header[93] = 0x00;
+            header[94] = 0xFF;
             header[95] = 0x00;
 
             // G
             header[96] = 0x00;
-            header[97] = 0x00;
-            header[98] = 0xFF;
+            header[97] = 0xFF;
+            header[98] = 0x00;
             header[99] = 0x00;
 
             // B
-            header[100] = 0x00;
+            header[100] = 0xFF;
             header[101] = 0x00;
             header[102] = 0x00;
-            header[103] = 0xFF;
+            header[103] = 0x00;
 
             // A
-            header[104] = 0xFF;
+            header[104] = 0x00;
             header[105] = 0x00;
             header[106] = 0x00;
-            header[107] = 0x00;
+            header[107] = 0xFF;
 
             header[109] = 0x10;
 
