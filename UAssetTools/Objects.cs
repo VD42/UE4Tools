@@ -33,8 +33,8 @@ namespace UAssetTools
         public byte GlobalStripFlags;
         public byte ClassStripFlags;
 
-        public Name PixelFormatName1;
-        public Name PixelFormatName2;
+        public FName PixelFormatName1;
+        public FName PixelFormatName2;
         public Int32 SkipOffset;
 
         public TexturePlatformData Data;
@@ -110,13 +110,13 @@ namespace UAssetTools
         public Int32 Something; // ???
 
         public bool bCooked;
-        public Name CompressionName;
+        public FName CompressionName;
         public FormatContainer CompressedFormatData;
         public Guid CompressedDataGuid;
 
         public SoundWave()
         {
-            CompressionName = new Name();
+            CompressionName = new FName();
             CompressedFormatData = new FormatContainer();
         }
 
@@ -155,7 +155,7 @@ namespace UAssetTools
         public Int64 Something; // ???
 
         public Int32 Count;
-        public List<Name> Names;
+        public List<FName> Names;
         public byte EnumTypeByte;
 
         public Enum()
@@ -214,11 +214,11 @@ namespace UAssetTools
         public Int32 Something; // ???
 
         public Int32 NumRows;
-        public List<KeyValuePair<Name, StructProperty>> RowMap;
+        public List<KeyValuePair<FName, StructProperty>> RowMap;
 
         public DataTable()
         {
-            RowMap = new List<KeyValuePair<Name, StructProperty>>();
+            RowMap = new List<KeyValuePair<FName, StructProperty>>();
         }
 
         public override void DeSerialize(Stream fs)
@@ -407,7 +407,7 @@ namespace UAssetTools
             FunctionFlags = ReadUInt32(fs);
             if ((FunctionFlags & 0x00000040) == 0x00000040)
                 throw new Exception("This flag not supported!");
-            if (FileSummary.FileVersionUE4 < 451)
+            if (FFileSummary.FileVersionUE4 < 451)
                 throw new Exception("This version not supported!");
             EventGraphFunction = ReadInt32(fs);
             EventGraphCallOffset = ReadInt32(fs);
@@ -444,7 +444,7 @@ namespace UAssetTools
             for (int i = 0; i < NumElements; i++)
                 CharRemap.Add(ReadUInt16(fs), ReadUInt16(fs));
 
-            if (FileSummary.FileVersionUE4 < 411)
+            if (FFileSummary.FileVersionUE4 < 411)
                 throw new Exception("This version not supported!");
         }
 

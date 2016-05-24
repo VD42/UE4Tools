@@ -406,9 +406,10 @@ namespace UAssetTools
                             try
                             {
                                 FileStream fs = new FileStream(files[i], FileMode.Open);
-                                asset.PackageFileSummary.DeSerialize(fs);
-                                asset.DeSerializeNameMap(fs);
-                                asset.DeSerializeExportMap(fs);
+                                FArchive ar = new FArchive(fs, FArchive.Type.Read);
+                                asset.PackageFileSummary.Serialize(ar);
+                                asset.SerializeNameMap(ar);
+                                asset.SerializeExportMap(ar);
 
                                 bool bFoundTextProperty = false;
                                 byte[] TextPropertySignature = new byte[8];

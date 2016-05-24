@@ -5,12 +5,12 @@ using System.IO;
 
 namespace UAssetTools
 {
-    public class PackageReader : BinaryHelper
+    public class PackageReader
     {
-        public FileSummary PackageFileSummary;
-        public static List<string> NameMap;
-        public static List<ObjectImport> ImportMap;
-        public List<ObjectExport> ExportMap;
+        public FFileSummary PackageFileSummary;
+        public static List<String> NameMap;
+        public static List<FObjectImport> ImportMap;
+        public List<FObjectExport> ExportMap;
         public List<List<Int32>> DependsMap;
 
         public Int64 NameOffset;
@@ -28,10 +28,10 @@ namespace UAssetTools
 
         public PackageReader()
         {
-            PackageFileSummary = new FileSummary();
+            PackageFileSummary = new FFileSummary();
             NameMap = new List<string>();
-            ImportMap = new List<ObjectImport>();
-            ExportMap = new List<ObjectExport>();
+            ImportMap = new List<FObjectImport>();
+            ExportMap = new List<FObjectExport>();
             DependsMap = new List<List<Int32>>();
 
             Texts = new List<TextInfo>();
@@ -40,76 +40,142 @@ namespace UAssetTools
             bEnableSoftMode = false;
         }
 
-        public void OpenPackageFile(string filename)
+        public void ReadOrSavePackageFile(string filename, FileMode mode)
         {
-            FileStream fs = new FileStream(filename, FileMode.Open);
-            PackageFileSummary.DeSerialize(fs);
-            DeSerializeNameMap(fs);
-            DeSerializeImportMap(fs);
-            DeSerializeExportMap(fs);
-            DeSerializeDependsMap(fs);
-            int AssetRegistryData = ReadInt32(fs);
-            if (AssetRegistryData != 0)
+            FileStream fs = new FileStream(filename, mode);
+            FArchive ar = new FArchive(fs, mode == FileMode.Open ? FArchive.Type.Read : FArchive.Type.Write);
+            PackageFileSummary.Serialize(ar);
+            SerializeNameMap(ar);
+            SerializeImportMap(ar);
+            SerializeExportMap(ar);
+            SerializeDependsMap(ar);
+            Int32 nAssetRegistryData = 0;
+            nAssetRegistryData.Serialize(ar);
+            if (nAssetRegistryData != 0)
                 throw new Exception("Not supported!");
-            ReadProperties(fs);
+            SerializeProperties(ar);
+            if (ar.IsWriting())
+            {
+                BulkDataStartOffset = ar.Position();
+                for (int i = 0; i < UntypedBulkData.BulkStorage.Count; i++)
+                    ar.Write(UntypedBulkData.BulkStorage[i]);
+                PackageFileSummary.Correction(
+                    ar,
+                    (Int32)TotalHeaderSize,
+                    NameMap.Count,
+                    (Int32)NameOffset,
+                    ExportMap.Count,
+                    (Int32)ExportOffset,
+                    ImportMap.Count,
+                    (Int32)ImportOffset,
+                    (Int32)BulkDataStartOffset,
+                    (Int32)DependsOffset,
+                    (Int32)AssetRegistryDataOffset,
+                    (Int32)AssetRegistryDataOffset
+                );
+                PackageFileSummary.Tag.Serialize(ar);
+            }
             fs.Close();
         }
 
-        public void DeSerializeNameMap(Stream fs)
+        public void OpenPackageFile(string filename)
         {
-            if (PackageFileSummary.NameCount > 0)
-            {
-                fs.Seek(PackageFileSummary.NameOffset, SeekOrigin.Begin);
-                for (int i = 0; i < PackageFileSummary.NameCount; i++)
-                    NameMap.Add(ReadString(fs));
-            }
+            ReadOrSavePackageFile(filename, FileMode.Open);
         }
 
-        public void DeSerializeImportMap(Stream fs)
+        public void SerializeNameMap(FArchive ar)
         {
-            if (PackageFileSummary.ImportCount > 0)
+            if (ar.IsReading())
             {
-                fs.Seek(PackageFileSummary.ImportOffset, SeekOrigin.Begin);
-                for (int i = 0; i < PackageFileSummary.ImportCount; i++)
+                if (PackageFileSummary.NameCount > 0)
                 {
-                    ImportMap.Add(new ObjectImport());
-                    ImportMap[i].DeSerialize(fs);
+                    ar.Seek(PackageFileSummary.NameOffset);
+                    NameMap.Capacity = PackageFileSummary.NameCount;
+                    for (int i = 0; i < PackageFileSummary.NameCount; i++)
+                        NameMap[i].Serialize(ar);
                 }
             }
+            else if (ar.IsWriting())
+            {
+                NameOffset = ar.Position();
+                for (int i = 0; i < NameMap.Count; i++)
+                    NameMap[i].Serialize(ar);
+            }
         }
 
-        public void DeSerializeExportMap(Stream fs)
+        public void SerializeImportMap(FArchive ar)
         {
-            if (PackageFileSummary.ExportCount > 0)
+            if (ar.IsReading())
             {
-                fs.Seek(PackageFileSummary.ExportOffset, SeekOrigin.Begin);
+                if (PackageFileSummary.ImportCount > 0)
+                {
+                    ar.Seek(PackageFileSummary.ImportOffset);
+                    ImportMap.Capacity = PackageFileSummary.ImportCount;
+                    for (int i = 0; i < PackageFileSummary.ImportCount; i++)
+                        ImportMap[i].Serialize(ar);
+                }
+            }
+            else if (ar.IsWriting())
+            {
+                ImportOffset = ar.Position();
+                for (int i = 0; i < ImportMap.Count; i++)
+                    ImportMap[i].Serialize(ar);
+            }
+        }
+
+        public void SerializeExportMap(FArchive ar)
+        {
+            if (ar.IsReading())
+            {
+                if (PackageFileSummary.ExportCount > 0)
+                {
+                    ar.Seek(PackageFileSummary.ExportOffset);
+                    ExportMap.Capacity = PackageFileSummary.ExportCount;
+                    for (int i = 0; i < PackageFileSummary.ExportCount; i++)
+                        ExportMap[i].Serialize(ar);
+                }
+            }
+            else if (ar.IsWriting())
+            {
+                ExportOffset = ar.Position();
+                for (int i = 0; i < ExportMap.Count; i++)
+                    ExportMap[i].Serialize(ar);
+            }
+        }
+
+        public void SerializeDependsMap(FArchive ar)
+        {
+            if (ar.IsReading())
+            {
+                ar.Seek(PackageFileSummary.DependsOffset);
+                DependsMap.Capacity = PackageFileSummary.ExportCount;
                 for (int i = 0; i < PackageFileSummary.ExportCount; i++)
-                {
-                    ExportMap.Add(new ObjectExport());
-                    ExportMap[i].DeSerialize(fs);
-                }
+                    DependsMap[i].Serialize(ar);
             }
-        }
-
-        public void DeSerializeDependsMap(Stream fs)
-        {
-            fs.Seek(PackageFileSummary.DependsOffset, SeekOrigin.Begin);
-            for (int i = 0; i < PackageFileSummary.ExportCount; i++)
+            else if (ar.IsWriting())
             {
-                DependsMap.Add(new List<Int32>());
-                Int32 Count = ReadInt32(fs);
-                for (int j = 0; j < Count; j++)
-                    DependsMap[i].Add(ReadInt32(fs));
+                DependsOffset = ar.Position();
+                for (int i = 0; i < DependsMap.Count; i++)
+                    DependsMap[i].Serialize(ar);
             }
         }
 
-        public void ReadProperties(Stream fs)
+        public void SerializeProperties(FArchive ar)
         {
             for (int i = 0; i < ExportMap.Count; i++)
             {
-                if (fs.Position != ExportMap[i].SerialOffset)
-                    throw new Exception("Bad read?");
-                fs.Seek(ExportMap[i].SerialOffset, SeekOrigin.Begin);
+                Int64 SerialOffset = 0;
+
+                if (ar.IsReading())
+                {
+                    if (ar.Position() != ExportMap[i].SerialOffset)
+                        throw new Exception("Bad read?");
+                    ar.Seek(ExportMap[i].SerialOffset);
+                }
+                else if (ar.IsWriting())
+                {
+                    SerialOffset = ar.Position();
+                }
 
                 Int32 ClassIndex = 0;
 
@@ -129,201 +195,79 @@ namespace UAssetTools
                         switch (sObjectName)
                         {
                             case "Texture2D":
-                                ExportMap[i].Object = new Texture2D();
-                                ((Texture2D)ExportMap[i].Object).DeSerialize(fs);
+                                if (ar.IsReading())
+                                    ExportMap[i].Object = new Texture2D();
+                                ((Texture2D)ExportMap[i].Object).Serialize(ar);
                                 break;
                             case "SoundWave":
-                                ExportMap[i].Object = new SoundWave();
-                                ((SoundWave)ExportMap[i].Object).DeSerialize(fs);
+                                if (ar.IsReading())
+                                    ExportMap[i].Object = new SoundWave();
+                                ((SoundWave)ExportMap[i].Object).Serialize(ar);
                                 break;
                             case "UserDefinedEnum":
-                                ExportMap[i].Object = new UserDefinedEnum();
-                                ((UserDefinedEnum)ExportMap[i].Object).DeSerialize(fs);
+                                if (ar.IsReading())
+                                    ExportMap[i].Object = new UserDefinedEnum();
+                                ((UserDefinedEnum)ExportMap[i].Object).Serialize(ar);
                                 break;
                             case "DataTable":
-                                ExportMap[i].Object = new DataTable();
-                                ((DataTable)ExportMap[i].Object).DeSerialize(fs);
-                                break;
-                            case "Function": // script currently not parsed
-                                ExportMap[i].Object = new Function();
-                                ((Function)ExportMap[i].Object).DeSerialize(fs);
+                                if (ar.IsReading())
+                                    ExportMap[i].Object = new DataTable();
+                                ((DataTable)ExportMap[i].Object).Serialize(ar);
                                 break;
                             case "Font":
-                                ExportMap[i].Object = new Font();
-                                ((Font)ExportMap[i].Object).DeSerialize(fs);
+                                if (ar.IsReading())
+                                    ExportMap[i].Object = new Font();
+                                ((Font)ExportMap[i].Object).Serialize(ar);
                                 break;
                             case "FontBulkData":
-                                ExportMap[i].Object = new FontBulkData();
-                                ((FontBulkData)ExportMap[i].Object).DeSerialize(fs);
+                                if (ar.IsReading())
+                                    ExportMap[i].Object = new FontBulkData();
+                                ((FontBulkData)ExportMap[i].Object).Serialize(ar);
                                 break;
                             default:
                                 if (!bEnableSoftMode)
                                     throw new Exception("Unknown object name!");
-                                ExportMap[i].Object = new RawObject();
-                                ((RawObject)ExportMap[i].Object).DeSerialize(fs);
+                                if (ar.IsReading())
+                                    ExportMap[i].Object = new RawObject();
+                                ((RawObject)ExportMap[i].Object).Serialize(ar);
                                 break;
                         }
                         break;
                     default:
                         if (!bEnableSoftMode)
                             throw new Exception("Unknown class name!");
-                        ExportMap[i].Object = new RawObject();
-                        ((RawObject)ExportMap[i].Object).DeSerialize(fs);
+                        if (ar.IsReading())
+                            ExportMap[i].Object = new RawObject();
+                        ((RawObject)ExportMap[i].Object).Serialize(ar);
                         break;
                 }
 
-                if (fs.Position < ExportMap[i].SerialOffset + ExportMap[i].SerialSize)
+                if (ar.IsReading())
                 {
-                    if (!bEnableSoftMode)
-                        throw new Exception("Bad read!");
-                    ExportMap[i].TailSomething = new byte[ExportMap[i].SerialOffset + ExportMap[i].SerialSize - fs.Position];
-                    fs.Read(ExportMap[i].TailSomething, 0, ExportMap[i].TailSomething.Length);
+                    if (ar.Position() < ExportMap[i].SerialOffset + ExportMap[i].SerialSize)
+                    {
+                        if (!bEnableSoftMode)
+                            throw new Exception("Bad read!");
+                        ExportMap[i].TailSomething = ar.Read((Int32)(ExportMap[i].SerialOffset + ExportMap[i].SerialSize - ar.Position()));
+                    }
+                    else if (ar.Position() > ExportMap[i].SerialOffset + ExportMap[i].SerialSize)
+                    {
+                        if (!bEnableSoftMode)
+                            throw new Exception("Realy bad read!!!");
+                    }
                 }
-                else if (fs.Position > ExportMap[i].SerialOffset + ExportMap[i].SerialSize)
+                else if (ar.IsWriting())
                 {
-                    if (!bEnableSoftMode)
-                        throw new Exception("Realy bad read!!!");
+                    Int64 SerialSize = ar.Position() - SerialOffset;
+                    ExportMap[i].Correction(ar, (Int32)SerialSize, (Int32)SerialOffset);
                 }
             }
         }
 
         public void SavePackageFile(string filename)
         {
-            FileStream fs = new FileStream(filename, FileMode.Create);
             UntypedBulkData.BulkStorage = new List<byte[]>();
-            PackageFileSummary.Serialize(fs);
-            SerializeNameMap(fs);
-            SerializeImportMap(fs);
-            SerializeExportMap(fs);
-            SerializeDependsMap(fs);
-            WriteAssetRegistryData(fs);
-            WriteProperties(fs);
-            WriteBulkData(fs);
-            PackageFileSummary.Correction(
-                fs,
-                (Int32)TotalHeaderSize,
-                NameMap.Count,
-                (Int32)NameOffset,
-                ExportMap.Count,
-                (Int32)ExportOffset,
-                ImportMap.Count,
-                (Int32)ImportOffset,
-                (Int32)BulkDataStartOffset,
-                (Int32)DependsOffset,
-                (Int32)AssetRegistryDataOffset,
-                (Int32)AssetRegistryDataOffset
-            );
-            WriteInt32(fs, PackageFileSummary.Tag);
-            fs.Close();
-        }
-
-        public void SerializeNameMap(Stream fs)
-        {
-            NameOffset = fs.Position;
-            for (int i = 0; i < NameMap.Count; i++)
-                WriteString(fs, NameMap[i]);
-        }
-
-        public void SerializeImportMap(Stream fs)
-        {
-            ImportOffset = fs.Position;
-            for (int i = 0; i < ImportMap.Count; i++)
-                ImportMap[i].Serialize(fs);
-        }
-
-        public void SerializeExportMap(Stream fs)
-        {
-            ExportOffset = fs.Position;
-            for (int i = 0; i < ExportMap.Count; i++)
-                ExportMap[i].Serialize(fs);
-        }
-
-        public void SerializeDependsMap(Stream fs)
-        {
-            DependsOffset = fs.Position;
-            for (int i = 0; i < PackageFileSummary.ExportCount; i++)
-            {
-                WriteInt32(fs, DependsMap[i].Count);
-                for (int j = 0; j < DependsMap[i].Count; j++)
-                    WriteInt32(fs, DependsMap[i][j]);
-            }
-        }
-        public void WriteAssetRegistryData(Stream fs)
-        {
-            AssetRegistryDataOffset = fs.Position;
-            WriteInt32(fs, 0); // not supported
-        }
-
-        public void WriteProperties(Stream fs)
-        {
-            TotalHeaderSize = fs.Position;
-
-            for (int i = 0; i < ExportMap.Count; i++)
-            {
-                Int64 SerialOffset = fs.Position;
-
-                Int32 ClassIndex = 0;
-
-                if (ExportMap[i].ClassIndex < 0)
-                    ClassIndex = ExportMap[i].ClassIndex;
-                else if (ExportMap[i].ClassIndex > 0)
-                    ClassIndex = ExportMap[ExportMap[i].ClassIndex - 1].ClassIndex; // ???
-                else
-                    throw new Exception("Not supported!");
-
-                string sClassName = PackageReader.NameMap[ImportMap[-ClassIndex - 1].ClassName.ComparisonIndex];
-                string sObjectName = PackageReader.NameMap[ImportMap[-ClassIndex - 1].ObjectName.ComparisonIndex];
-
-                switch (sClassName)
-                {
-                    case "Class":
-                        switch (sObjectName)
-                        {
-                            case "Texture2D":
-                                ((Texture2D)ExportMap[i].Object).Serialize(fs);
-                                break;
-                            case "SoundWave":
-                                ((SoundWave)ExportMap[i].Object).Serialize(fs);
-                                break;
-                            case "UserDefinedEnum":
-                                ((UserDefinedEnum)ExportMap[i].Object).Serialize(fs);
-                                break;
-                            case "DataTable":
-                                ((DataTable)ExportMap[i].Object).Serialize(fs);
-                                break;
-                            case "Function":
-                                ((Function)ExportMap[i].Object).Serialize(fs);
-                                break;
-                            case "Font":
-                                ((Font)ExportMap[i].Object).Serialize(fs);
-                                break;
-                            case "FontBulkData":
-                                ((FontBulkData)ExportMap[i].Object).Serialize(fs);
-                                break;
-                            default:
-                                if (!bEnableSoftMode)
-                                    throw new Exception("Unknown object name!");
-                                fs.Write(ExportMap[i].TailSomething, 0, ExportMap[i].TailSomething.Length);
-                                break;
-                        }
-                        break;
-                    default:
-                        if (!bEnableSoftMode)
-                            throw new Exception("Unknown class name!");
-                        fs.Write(ExportMap[i].TailSomething, 0, ExportMap[i].TailSomething.Length);
-                        break;
-                }
-
-                Int64 SerialSize = fs.Position - SerialOffset;
-                ExportMap[i].Correction(fs, (Int32)SerialSize, (Int32)SerialOffset);
-            }
-        }
-
-        public void WriteBulkData(Stream fs)
-        {
-            BulkDataStartOffset = fs.Position;
-            for (int i = 0; i < UntypedBulkData.BulkStorage.Count; i++)
-                fs.Write(UntypedBulkData.BulkStorage[i], 0, UntypedBulkData.BulkStorage[i].Length);
+            ReadOrSavePackageFile(filename, FileMode.Create);
         }
     }
 }

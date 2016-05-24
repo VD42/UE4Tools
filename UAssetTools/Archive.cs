@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -150,6 +151,27 @@ namespace UAssetTools
                 }
             }
         }
+
+        public static void Serialize<T>(this List<T> val, FArchive ar)
+        {
+            MethodInfo info = typeof(T).Module.GetMethod("Serialize");
+            if (info == null)
+                throw new Exception("Serialize method not found!");
+            Int32 nCount = val.Count;
+            nCount.Serialize(ar);
+            if (ar.IsReading())
+                val.Capacity = nCount;
+            for (int i = 0; i < nCount; i++)
+                info.Invoke(val[i], new object[1] { ar });
+        }
+
+        public static void Serialize(this Int64 val, FArchive ar)
+        {
+            if (ar.IsReading())
+                val = BitConverter.ToInt64(ar.Read(8), 0);
+            else if (ar.IsWriting())
+                ar.Write(BitConverter.GetBytes(val));
+        }
     }
 
     public class FArchive
@@ -163,10 +185,14 @@ namespace UAssetTools
         private Type m_type;
         private Stream m_stream;
         private Boolean m_bForceUnicode;
+        private Dictionary<String, Int64> m_mapPositions;
 
-        public FArchive()
+        public FArchive(Stream stream, Type type)
         {
+            m_type = type;
+            m_stream = stream;
             m_bForceUnicode = false;
+            m_mapPositions = new Dictionary<String, Int64>();
         }
 
         public bool IsReading()
@@ -204,6 +230,34 @@ namespace UAssetTools
         public void DropForceUnicode()
         {
             m_bForceUnicode = false;
+        }
+
+        public void SavePosition(String name)
+        {
+            m_mapPositions[name] = m_stream.Position;
+        }
+
+        public void WriteToPosition<T>(String name, T val)
+        {
+            if (!m_mapPositions.ContainsKey(name))
+                throw new Exception("Position not found!");
+            MethodInfo info = typeof(T).Module.GetMethod("Serialize");
+            if (info == null)
+                throw new Exception("Serialize method not found!");
+            Int64 nCurrentPosition = m_stream.Position;
+            m_stream.Position = m_mapPositions[name];
+            info.Invoke(val, new object[1] { this });
+            m_stream.Position = nCurrentPosition;
+        }
+
+        public void Seek(Int64 nPosition)
+        {
+            m_stream.Position = nPosition;
+        }
+
+        public Int64 Position()
+        {
+            return m_stream.Position;
         }
     }
 }

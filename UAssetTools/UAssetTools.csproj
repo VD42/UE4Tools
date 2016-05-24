@@ -64,6 +64,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Archive.cs" />
+    <Compile Include="ComplexStructs.cs" />
     <Compile Include="FileSummary.cs" />
     <Compile Include="Objects.cs" />
     <Compile Include="PackageReader.cs" />
@@ -71,7 +72,7 @@
     <Compile Include="Properties.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Tests.cs" />
-    <Compile Include="Types.cs" />
+    <Compile Include="SimpleStructs.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

@@ -5,17 +5,27 @@ using System.IO;
 
 namespace UAssetTools
 {
+    public class UProperty<T>
+    {
+        public bool m_bExist;
+
+        public UProperty()
+        {
+            m_bExist = false;
+        }
+    }
+
     public class PropertyTag : BinaryHelper
     {
-        public Name Name;
-        public Name Type;
+        public FName Name;
+        public FName Type;
         public Int32 Size;
         public Int32 ArrayIndex;
-        public Name StructName;
+        public FName StructName;
         public Guid StructGuid;
         public byte BoolVal;
-        public Name EnumName;
-        public Name InnerType;
+        public FName EnumName;
+        public FName InnerType;
 
         public Int32 ClassIndex;
 
