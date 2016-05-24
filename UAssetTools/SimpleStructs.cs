@@ -160,7 +160,7 @@ namespace UAssetTools
         public String Key;
         public String SourceStringRaw;
 
-        public void DeSerialize(FArchive ar)
+        public void Serialize(FArchive ar)
         {
             if (FFileSummary.FileVersionUE4 < 368)
                 throw new Exception("This version not supported!");
@@ -454,6 +454,83 @@ namespace UAssetTools
             Key.Serialize(ar);
             Version.Serialize(ar);
             FriendlyName.Serialize(ar);
+        }
+    }
+
+    public class FPropertyTag
+    {
+        public FName Name;
+        public FName Type;
+        public Int32 Size;
+        public Int32 ArrayIndex;
+        public FName StructName;
+        public Guid StructGuid;
+        public Byte BoolVal;
+        public FName EnumName;
+        public FName InnerType;
+
+        public Int32 ClassIndex;
+
+        public Int64 SizeOffset;
+
+        public FPropertyTag()
+        {
+            Name = new FName();
+            Type = new FName();
+            StructName = new FName();
+            EnumName = new FName();
+            InnerType = new FName();
+        }
+
+        public void Serialize(FArchive ar)
+        {
+            Name.Serialize(ar);
+            if (Name.ToString() == "None")
+                return;
+            Type.Serialize(ar);
+            ar.SavePosition("SizeOffset"); Size.Serialize(ar);
+            ArrayIndex.Serialize(ar);
+            if (Type.ToString() == "StructProperty")
+            {
+                StructName.Serialize(ar);
+                if (FFileSummary.FileVersionUE4 < 441)
+                    throw new Exception("This version not supported!");
+                StructGuid.Serialize(ar);
+            }
+            else if (Type.ToString() == "BoolProperty")
+            {
+                BoolVal.Serialize(ar);
+            }
+            else if (Type.ToString() == "ByteProperty")
+            {
+                EnumName.Serialize(ar);
+            }
+            else if (Type.ToString() == "ArrayProperty")
+            {
+                if (FFileSummary.FileVersionUE4 < 282)
+                    throw new Exception("This version not supported!");
+                InnerType.Serialize(ar);
+            }
+        }
+
+        public class FFontCharacter
+        {
+            public Int32 StartU;
+            public Int32 StartV;
+            public Int32 USize;
+            public Int32 VSize;
+            public Byte TextureIndex;
+            public Int32 VerticalOffset;
+
+            public void Serialize(FArchive ar)
+            {
+                StartU.Serialize(ar);
+                StartV.Serialize(ar);
+                USize.Serialize(ar);
+                VSize.Serialize(ar);
+                TextureIndex.Serialize(ar);
+                VerticalOffset.Serialize(ar);
+            }
         }
     }
 }

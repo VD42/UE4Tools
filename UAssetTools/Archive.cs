@@ -152,7 +152,7 @@ namespace UAssetTools
             }
         }
 
-        public static void Serialize<T>(this List<T> val, FArchive ar)
+        public static void Serialize<T>(this List<T> val, FArchive ar) where T : new()
         {
             MethodInfo info = typeof(T).Module.GetMethod("Serialize");
             if (info == null)
@@ -160,7 +160,8 @@ namespace UAssetTools
             Int32 nCount = val.Count;
             nCount.Serialize(ar);
             if (ar.IsReading())
-                val.Capacity = nCount;
+                for (int i = 0; i < nCount; i++)
+                    val.Add(new T());
             for (int i = 0; i < nCount; i++)
                 info.Invoke(val[i], new object[1] { ar });
         }
@@ -171,6 +172,37 @@ namespace UAssetTools
                 val = BitConverter.ToInt64(ar.Read(8), 0);
             else if (ar.IsWriting())
                 ar.Write(BitConverter.GetBytes(val));
+        }
+
+        public static void Serialize<K, T>(this Dictionary<K, T> val, FArchive ar) where K : new() where T : new()
+        {
+            MethodInfo info1 = typeof(K).Module.GetMethod("Serialize");
+            if (info1 == null)
+                throw new Exception("Serialize method not found!");
+            MethodInfo info2 = typeof(T).Module.GetMethod("Serialize");
+            if (info2 == null)
+                throw new Exception("Serialize method not found!");
+            Int32 nCount = val.Count;
+            nCount.Serialize(ar);
+            if (ar.IsReading())
+            {
+                for (int i = 0; i < nCount; i++)
+                {
+                    K item1 = new K();
+                    info1.Invoke(item1, new object[1] { ar });
+                    T item2 = new T();
+                    info2.Invoke(item2, new object[1] { ar });
+                    val.Add(item1, item2);
+                }
+            }
+            else if (ar.IsReading())
+            {
+                foreach (K key in val.Keys)
+                {
+                    info1.Invoke(key, new object[1] { ar });
+                    info2.Invoke(val[key], new object[1] { ar });
+                }
+            }
         }
     }
 

@@ -57,8 +57,8 @@ namespace UAssetTools
             if (ar.IsWriting())
             {
                 BulkDataStartOffset = ar.Position();
-                for (int i = 0; i < UntypedBulkData.BulkStorage.Count; i++)
-                    ar.Write(UntypedBulkData.BulkStorage[i]);
+                for (int i = 0; i < FUntypedBulkData.BulkStorage.Count; i++)
+                    ar.Write(FUntypedBulkData.BulkStorage[i]);
                 PackageFileSummary.Correction(
                     ar,
                     (Int32)TotalHeaderSize,
@@ -196,40 +196,40 @@ namespace UAssetTools
                         {
                             case "Texture2D":
                                 if (ar.IsReading())
-                                    ExportMap[i].Object = new Texture2D();
-                                ((Texture2D)ExportMap[i].Object).Serialize(ar);
+                                    ExportMap[i].Object = new UTexture2D();
+                                ((UTexture2D)ExportMap[i].Object).Serialize(ar);
                                 break;
                             case "SoundWave":
                                 if (ar.IsReading())
-                                    ExportMap[i].Object = new SoundWave();
-                                ((SoundWave)ExportMap[i].Object).Serialize(ar);
+                                    ExportMap[i].Object = new USoundWave();
+                                ((USoundWave)ExportMap[i].Object).Serialize(ar);
                                 break;
                             case "UserDefinedEnum":
                                 if (ar.IsReading())
-                                    ExportMap[i].Object = new UserDefinedEnum();
-                                ((UserDefinedEnum)ExportMap[i].Object).Serialize(ar);
+                                    ExportMap[i].Object = new UUserDefinedEnum();
+                                ((UUserDefinedEnum)ExportMap[i].Object).Serialize(ar);
                                 break;
                             case "DataTable":
                                 if (ar.IsReading())
-                                    ExportMap[i].Object = new DataTable();
-                                ((DataTable)ExportMap[i].Object).Serialize(ar);
+                                    ExportMap[i].Object = new UDataTable();
+                                ((UDataTable)ExportMap[i].Object).Serialize(ar);
                                 break;
                             case "Font":
                                 if (ar.IsReading())
-                                    ExportMap[i].Object = new Font();
-                                ((Font)ExportMap[i].Object).Serialize(ar);
+                                    ExportMap[i].Object = new UFont();
+                                ((UFont)ExportMap[i].Object).Serialize(ar);
                                 break;
                             case "FontBulkData":
                                 if (ar.IsReading())
-                                    ExportMap[i].Object = new FontBulkData();
-                                ((FontBulkData)ExportMap[i].Object).Serialize(ar);
+                                    ExportMap[i].Object = new UFontBulkData();
+                                ((UFontBulkData)ExportMap[i].Object).Serialize(ar);
                                 break;
                             default:
                                 if (!bEnableSoftMode)
                                     throw new Exception("Unknown object name!");
                                 if (ar.IsReading())
-                                    ExportMap[i].Object = new RawObject();
-                                ((RawObject)ExportMap[i].Object).Serialize(ar);
+                                    ExportMap[i].Object = new URawClass();
+                                ((URawClass)ExportMap[i].Object).Serialize(ar);
                                 break;
                         }
                         break;
@@ -237,8 +237,8 @@ namespace UAssetTools
                         if (!bEnableSoftMode)
                             throw new Exception("Unknown class name!");
                         if (ar.IsReading())
-                            ExportMap[i].Object = new RawObject();
-                        ((RawObject)ExportMap[i].Object).Serialize(ar);
+                            ExportMap[i].Object = new URawClass();
+                        ((URawClass)ExportMap[i].Object).Serialize(ar);
                         break;
                 }
 
@@ -266,7 +266,7 @@ namespace UAssetTools
 
         public void SavePackageFile(string filename)
         {
-            UntypedBulkData.BulkStorage = new List<byte[]>();
+            FUntypedBulkData.BulkStorage = new List<byte[]>();
             ReadOrSavePackageFile(filename, FileMode.Create);
         }
     }

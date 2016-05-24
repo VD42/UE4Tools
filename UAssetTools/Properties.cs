@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using Helpers;
 using System.IO;
+using System.Reflection;
 
 namespace UAssetTools
 {
@@ -15,94 +16,29 @@ namespace UAssetTools
         }
     }
 
-    public class PropertyTag : BinaryHelper
+    public class UStruct
     {
-        public FName Name;
-        public FName Type;
-        public Int32 Size;
-        public Int32 ArrayIndex;
-        public FName StructName;
-        public Guid StructGuid;
-        public byte BoolVal;
-        public FName EnumName;
-        public FName InnerType;
-
-        public Int32 ClassIndex;
-
-        public Int64 SizeOffset;
-
-        public PropertyTag()
+        public virtual void Serialize(FArchive ar)
         {
-            Name = new Name();
-            Type = new Name();
-            StructName = new Name();
-            EnumName = new Name();
-            InnerType = new Name();
-        }
-
-        public void DeSerialize(Stream fs)
-        {
-            Name.DeSerialize(fs);
-            string sName = PackageReader.NameMap[Name.ComparisonIndex];
-            if (sName == "None")
-                return;
-            Type.DeSerialize(fs);
-            string sType = PackageReader.NameMap[Type.ComparisonIndex];
-            Size = ReadInt32(fs);
-            ArrayIndex = ReadInt32(fs);
-            if (sType == "StructProperty")
+            if (ar.IsReading())
             {
-                StructName.DeSerialize(fs);
-                if (FileSummary.FileVersionUE4 < 441)
-                    throw new Exception("This version not supported!");
-                StructGuid = ReadGuid(fs);
-            }
-            else if (sType == "BoolProperty")
-            {
-                BoolVal = ReadByte(fs);
-            }
-            else if (sType == "ByteProperty")
-            {
-                EnumName.DeSerialize(fs);
-            }
-            else if (sType == "ArrayProperty")
-            {
-                if (FileSummary.FileVersionUE4 < 282)
-                    throw new Exception("This version not supported!");
-                InnerType.DeSerialize(fs);
+                while (true)
+                {
+                    FPropertyTag tag = new FPropertyTag();
+                    tag.Serialize(ar);
+                    if (tag.Name.ToString() == "None")
+                        return;
+                    FieldInfo info = GetType().GetField(tag.Name.ToString());
+                    if (info == null)
+                        throw new Exception("Property not found!");
+                    object property = info.GetValue(this);
+                }
             }
         }
 
-        public void Serialize(Stream fs)
-        {
-            Name.Serialize(fs);
-            string sName = PackageReader.NameMap[Name.ComparisonIndex];
-            if (sName == "None")
-                return;
-            Type.Serialize(fs);
-            string sType = PackageReader.NameMap[Type.ComparisonIndex];
-            SizeOffset = fs.Position;  WriteInt32(fs, Size); // POST: Size (maybe not change)
-            WriteInt32(fs, ArrayIndex);
-            if (sType == "StructProperty")
-            {
-                StructName.Serialize(fs);
-                WriteGuid(fs, StructGuid);
-            }
-            else if (sType == "BoolProperty")
-            {
-                WriteByte(fs, BoolVal);
-            }
-            else if (sType == "ByteProperty")
-            {
-                EnumName.Serialize(fs);
-            }
-            else if (sType == "ArrayProperty")
-            {
-                InnerType.Serialize(fs);
-            }
-        }
     }
 
+    /*
     public class StructProperty : BinaryHelper
     {
         public List<KeyValuePair<PropertyTag, object>> Properties;
@@ -435,4 +371,5 @@ namespace UAssetTools
             }
         }
     }
+    */
 }

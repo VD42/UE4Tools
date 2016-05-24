@@ -444,8 +444,8 @@ namespace UAssetTools
                                         try
                                         {
                                             fs.Seek(8, SeekOrigin.Current);
-                                            Text t = new Text();
-                                            t.DeSerialize(fs);
+                                            FText t = new FText();
+                                            t.Serialize(ar);
                                         }
                                         catch (Exception ex)
                                         {
@@ -516,7 +516,7 @@ namespace UAssetTools
                                 }
                                 if (asset.ExportMap.Count > 0 && PackageReader.NameMap[PackageReader.ImportMap[-asset.ExportMap[0].ClassIndex - 1].ObjectName.ComparisonIndex] == "Texture2D")
                                 {
-                                    Texture2D texture = (Texture2D)asset.ExportMap[0].Object;
+                                    UTexture2D texture = (UTexture2D)asset.ExportMap[0].Object;
                                     string sPixelFormat = PackageReader.NameMap[texture.PixelFormatName1.ComparisonIndex];
                                     if (sPixelFormat.Length >= 6 && sPixelFormat.Substring(0, 6) == "PF_DXT")
                                     {
@@ -591,7 +591,7 @@ namespace UAssetTools
                                 }
                                 if (asset.ExportMap.Count > 0 && PackageReader.NameMap[PackageReader.ImportMap[-asset.ExportMap[0].ClassIndex - 1].ObjectName.ComparisonIndex] == "Texture2D")
                                 {
-                                    Texture2D texture = (Texture2D)asset.ExportMap[0].Object;
+                                    UTexture2D texture = (UTexture2D)asset.ExportMap[0].Object;
                                     string sPixelFormat = PackageReader.NameMap[texture.PixelFormatName1.ComparisonIndex];
                                     if (sPixelFormat.Length >= 6 && sPixelFormat.Substring(0, 6) == "PF_DXT")
                                     {
@@ -694,7 +694,7 @@ namespace UAssetTools
                             }
                             PackageReader asset = new PackageReader();
                             asset.OpenPackageFile(Path.Combine(args[1], Pictures[i].File));
-                            Texture2D texture = (Texture2D)asset.ExportMap[0].Object;
+                            UTexture2D texture = (UTexture2D)asset.ExportMap[0].Object;
                             string sPixelFormat = PackageReader.NameMap[texture.PixelFormatName1.ComparisonIndex];
                             if (sPixelFormat.Length >= 6 && sPixelFormat.Substring(0, 6) == "PF_DXT")
                             {
@@ -772,9 +772,9 @@ namespace UAssetTools
                         asset.OpenPackageFile(args[1]);
                         for (int i = 0; i < asset.ExportMap.Count; i++)
                         {
-                            if (asset.ExportMap[i].Object.GetType() == typeof(FontBulkData))
+                            if (asset.ExportMap[i].Object.GetType() == typeof(UFontBulkData))
                             {
-                                FontBulkData font = (FontBulkData)asset.ExportMap[i].Object;
+                                UFontBulkData font = (UFontBulkData)asset.ExportMap[i].Object;
                                 FileStream fs = new FileStream(args[2], FileMode.Create);
                                 if (font.BulkData.BulkDataDecompressed != null)
                                     fs.Write(font.BulkData.BulkDataDecompressed, 0, font.BulkData.BulkDataDecompressed.Length);
@@ -792,9 +792,9 @@ namespace UAssetTools
                         asset.OpenPackageFile(args[1]);
                         for (int i = 0; i < asset.ExportMap.Count; i++)
                         {
-                            if (asset.ExportMap[i].Object.GetType() == typeof(FontBulkData))
+                            if (asset.ExportMap[i].Object.GetType() == typeof(UFontBulkData))
                             {
-                                FontBulkData font = (FontBulkData)asset.ExportMap[i].Object;
+                                UFontBulkData font = (UFontBulkData)asset.ExportMap[i].Object;
                                 FileStream fs = new FileStream(args[2], FileMode.Open);
                                 if (font.BulkData.BulkDataDecompressed != null)
                                 {
