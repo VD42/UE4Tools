@@ -33,6 +33,7 @@ namespace UAssetTools
         public Int32 LegacyUE3Version;
         public static Int32 FileVersionUE4;
         public Int32 FileVersionLicenseeUE4;
+        public static bool bUnversioned;
         public List<GuidCustomVersion_DEPRECATED> VersionArray;
         public Int32 TotalHeaderSize;
         public string FolderName;
@@ -91,11 +92,12 @@ namespace UAssetTools
             if (Tag != -1641380927)
                 throw new Exception("This is not uasset!");
             LegacyFileVersion = ReadInt32(fs);
-            if (LegacyFileVersion != -5)
-                throw new Exception("LegacyFileVersion != -5 not supported!");
+            if (LegacyFileVersion < -7)
+                throw new Exception("LegacyFileVersion < -7 not supported!");
             LegacyUE3Version = ReadInt32(fs);
             FileVersionUE4 = ReadInt32(fs);
             FileVersionLicenseeUE4 = ReadInt32(fs);
+            bUnversioned = (FileVersionUE4 == 0 && FileVersionLicenseeUE4 == 0);
             int nVersionsCount = ReadInt32(fs);
             for (int i = 0; i < nVersionsCount; i++)
             {
@@ -109,7 +111,7 @@ namespace UAssetTools
                 throw new Exception("Flag must be set!");
             NameCount = ReadInt32(fs);
             NameOffset = ReadInt32(fs);
-            if (FileVersionUE4 >= 459) // VER_UE4_SERIALIZE_TEXT_IN_PACKAGES
+            if (bUnversioned || FileVersionUE4 >= 459) // VER_UE4_SERIALIZE_TEXT_IN_PACKAGES
             {
                 GatherableTextDataCount = ReadInt32(fs);
                 if (GatherableTextDataCount > 0)
@@ -121,7 +123,7 @@ namespace UAssetTools
             ImportCount = ReadInt32(fs);
             ImportOffset = ReadInt32(fs);
             DependsOffset = ReadInt32(fs);
-            if (FileVersionUE4 < 384)
+            if (!bUnversioned && FileVersionUE4 < 384)
                 throw new Exception("This version not supported!");
             StringAssetReferencesCount = ReadInt32(fs);
             if (StringAssetReferencesCount > 0)
@@ -137,10 +139,10 @@ namespace UAssetTools
                 Generations.Add(new GenerationInfo());
                 Generations[i].DeSerialize(fs);
             }
-            if (FileVersionUE4 < 336)
+            if (!bUnversioned && FileVersionUE4 < 336)
                 throw new Exception("This version not supported!");
             SavedByEngineVersion.DeSerialize(fs);
-            if (FileVersionUE4 < 444)
+            if (!bUnversioned && FileVersionUE4 < 444)
                 throw new Exception("This version not supported!");
             CompatibleWithEngineVersion.DeSerialize(fs);
             CompressionFlags = ReadUInt32(fs);
@@ -154,12 +156,12 @@ namespace UAssetTools
             TextureAllocations.DeSerialize(fs);
             AssetRegistryDataOffset = ReadInt32(fs);
             BulkDataStartOffset = ReadInt64(fs);
-            if (FileVersionUE4 < 224)
+            if (!bUnversioned && FileVersionUE4 < 224)
                 throw new Exception("This version not supported!");
             WorldTileInfoDataOffset = ReadInt32(fs);
             if (WorldTileInfoDataOffset > 0)
                 throw new Exception("WorldTileInfoDataOffset not supported!");
-            if (FileVersionUE4 < 326)
+            if (!bUnversioned && FileVersionUE4 < 326)
                 throw new Exception("This version not supported!");
             int nChunkIDsCount = ReadInt32(fs);
             for (int i = 0; i < nChunkIDsCount; i++)
@@ -173,6 +175,9 @@ namespace UAssetTools
             WriteInt32(fs, LegacyUE3Version);
             WriteInt32(fs, FileVersionUE4);
             WriteInt32(fs, FileVersionLicenseeUE4);
+            bool bUnversioned = (FileVersionUE4 == 0 && FileVersionLicenseeUE4 == 0);
+            if (bUnversioned)
+                throw new Exception("FileVersionUE4 == 0 and FileVersionLicenseeUE4 == 0 not supported for write!");
             WriteInt32(fs, VersionArray.Count);
             for (int i = 0; i < VersionArray.Count; i++)
                 VersionArray[i].Serialize(fs);

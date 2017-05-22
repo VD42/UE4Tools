@@ -167,7 +167,7 @@ namespace UAssetTools
             bNotForServer = ReadBool(fs);
             PackageGuid = ReadGuid(fs);
             PackageFlags = ReadUInt32(fs);
-            if (FileSummary.FileVersionUE4 < 365)
+            if (!FileSummary.bUnversioned && FileSummary.FileVersionUE4 < 365)
                 throw new Exception("This version not supported!");
             bNotForEditorGame = ReadBool(fs);
         }
@@ -213,12 +213,12 @@ namespace UAssetTools
 
         public void DeSerialize(Stream fs)
         {
-            if (FileSummary.FileVersionUE4 < 368)
+            if (!FileSummary.bUnversioned && FileSummary.FileVersionUE4 < 368)
                 throw new Exception("This version not supported!");
             Flags = ReadInt32(fs);
             HistoryType = ReadByte(fs);
-            if (HistoryType != 0 && HistoryType != 255)
-                throw new Exception("Other types not supported!");
+            //if (HistoryType != 0 && HistoryType != 255)
+            //    throw new Exception("Other types not supported!");
             if (HistoryType == 0)
             {
                 Namespace = ReadString(fs);

@@ -519,7 +519,7 @@ namespace UAssetTools
                                             continue;
                                         try
                                         {
-                                            fs.Seek(8, SeekOrigin.Current);
+                                            fs.Seek(9, SeekOrigin.Current);
                                             Text t = new Text();
                                             t.DeSerialize(fs);
                                         }

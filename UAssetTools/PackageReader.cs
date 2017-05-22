@@ -61,7 +61,14 @@ namespace UAssetTools
             {
                 fs.Seek(PackageFileSummary.NameOffset, SeekOrigin.Begin);
                 for (int i = 0; i < PackageFileSummary.NameCount; i++)
+                {
                     NameMap.Add(ReadString(fs));
+                    if (FileSummary.bUnversioned || FileSummary.FileVersionUE4 >= 504) // VER_UE4_NAME_HASHES_SERIALIZED
+                    {
+                       UInt16 NonCasePreservingHash = ReadUInt16(fs);
+                       UInt16 CasePreservingHash = ReadUInt16(fs);
+                    }
+                }
             }
         }
 
@@ -221,7 +228,11 @@ namespace UAssetTools
         {
             NameOffset = fs.Position;
             for (int i = 0; i < NameMap.Count; i++)
+            {
                 WriteString(fs, NameMap[i]);
+                if (FileSummary.FileVersionUE4 >= 504) // VER_UE4_NAME_HASHES_SERIALIZED
+                    throw new Exception("FileVersionUE4 >= 504 not supported for write!");
+            }
         }
 
         public void SerializeImportMap(Stream fs)
