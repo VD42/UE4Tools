@@ -130,6 +130,7 @@ namespace UAssetTools
     {
         public Int32 ClassIndex;
         public Int32 SuperIndex;
+        public Int32 TemplateIndex;
         public Int32 OuterIndex;
         public Name ObjectName;
         public UInt32 ObjectFlags;
@@ -141,6 +142,12 @@ namespace UAssetTools
         public Guid PackageGuid;
         public UInt32 PackageFlags;
         public bool bNotForEditorGame;
+        public bool bIsAsset;
+        public Int32 FirstExportDependency;
+        public Int32 SerializationBeforeSerializationDependencies;
+        public Int32 CreateBeforeSerializationDependencies;
+        public Int32 SerializationBeforeCreateDependencies;
+        public Int32 CreateBeforeCreateDependencies;
 
         public object Object;
         public byte[] TailSomething;
@@ -157,6 +164,8 @@ namespace UAssetTools
         {
             ClassIndex = ReadInt32(fs);
             SuperIndex = ReadInt32(fs);
+            // if (FileSummary.bUnversioned || FileSummary.FileVersionUE4 >= 508) // VER_UE4_TemplateIndex_IN_COOKED_EXPORTS
+            //     TemplateIndex = ReadInt32(fs);
             OuterIndex = ReadInt32(fs);
             ObjectName.DeSerialize(fs);
             ObjectFlags = ReadUInt32(fs); // need add Load flag? and check bIsAsset?
@@ -170,13 +179,24 @@ namespace UAssetTools
             if (!FileSummary.bUnversioned && FileSummary.FileVersionUE4 < 365)
                 throw new Exception("This version not supported!");
             bNotForEditorGame = ReadBool(fs);
+            if (FileSummary.bUnversioned || FileSummary.FileVersionUE4 >= 485) // VER_UE4_COOKED_ASSETS_IN_EDITOR_SUPPORT
+                bIsAsset = ReadBool(fs);
+            /*if (FileSummary.bUnversioned || FileSummary.FileVersionUE4 >= 507) // VER_UE4_PRELOAD_DEPENDENCIES_IN_COOKED_EXPORTS
+            {
+                FirstExportDependency = ReadInt32(fs);
+                SerializationBeforeSerializationDependencies = ReadInt32(fs);
+                CreateBeforeSerializationDependencies = ReadInt32(fs);
+                SerializationBeforeCreateDependencies = ReadInt32(fs);
+                CreateBeforeCreateDependencies = ReadInt32(fs);
+            }*/
         }
 
         public void Serialize(Stream fs)
         {
             WriteInt32(fs, ClassIndex);
             WriteInt32(fs, SuperIndex);
-            WriteInt32(fs, OuterIndex);
+            if (FileSummary.bUnversioned || FileSummary.FileVersionUE4 >= 508) // VER_UE4_TemplateIndex_IN_COOKED_EXPORTS
+                throw new Exception("TemplateIndex not supported for write!");
             ObjectName.Serialize(fs);
             WriteUInt32(fs, ObjectFlags);
             SerialSizeOffset = fs.Position; WriteInt32(fs, 0); // POST: SerialSize
@@ -187,6 +207,10 @@ namespace UAssetTools
             WriteGuid(fs, PackageGuid);
             WriteUInt32(fs, PackageFlags);
             WriteBool(fs, bNotForEditorGame);
+            if (FileSummary.bUnversioned || FileSummary.FileVersionUE4 >= 485) // VER_UE4_COOKED_ASSETS_IN_EDITOR_SUPPORT
+                throw new Exception("bIsAsset not supported for write!");
+            if (FileSummary.bUnversioned || FileSummary.FileVersionUE4 >= 507) // VER_UE4_PRELOAD_DEPENDENCIES_IN_COOKED_EXPORTS
+                throw new Exception("PRELOAD_DEPENDENCIES not supported for write!");
         }
 
         public void Correction(Stream fs, Int32 SerialSize, Int32 SerialOffset)
