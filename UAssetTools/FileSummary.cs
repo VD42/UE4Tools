@@ -153,7 +153,9 @@ namespace UAssetTools
             int nAdditionalPackagesToCookCount = ReadInt32(fs);
             if (nAdditionalPackagesToCookCount > 0)
                 throw new Exception("AdditionalPackagesToCook not supported!");
-            TextureAllocations.DeSerialize(fs);
+            if (LegacyFileVersion > -7)
+                TextureAllocations.DeSerialize(fs);
+
             AssetRegistryDataOffset = ReadInt32(fs);
             BulkDataStartOffset = ReadInt64(fs);
             if (!bUnversioned && FileVersionUE4 < 224)

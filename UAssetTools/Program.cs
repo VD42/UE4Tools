@@ -475,6 +475,7 @@ namespace UAssetTools
                     {
                         List<String> files = new List<string>();
                         GetFiles(args[1], ref files);
+                        HashSet<string> Namespaces = new HashSet<string>();
                         List<TextInfo> Texts = new List<TextInfo>();
                         for (int i = 0; i < files.Count; i++)
                         {
@@ -535,8 +536,8 @@ namespace UAssetTools
                                 for (int j = 0; j < PackageReader.Texts.Count; j++)
                                 {
                                     Texts.Add(PackageReader.Texts[j]);
-                                    if (Texts[Texts.Count - 1].Namespace != "")
-                                        throw new Exception("Only empty supported!");
+                                    if (!Namespaces.Contains(Texts[Texts.Count - 1].Namespace))
+                                        Namespaces.Add(Texts[Texts.Count - 1].Namespace);
                                     Texts[Texts.Count - 1].File = files[i];
                                 }
                             }
@@ -557,13 +558,18 @@ namespace UAssetTools
                             }
                         }
                         StreamWriter sw = new StreamWriter(args[2]);
-                        sw.WriteLine("=>{}");
-                        sw.WriteLine();
-                        for (int i = 0; i < Texts.Count; i++)
+                        foreach (var ns in Namespaces)
                         {
-                            sw.WriteLine("=>[" + Texts[i].Key + "][" + Texts[i].Hash + "]");
-                            sw.WriteLine(Texts[i].Text);
+                            sw.WriteLine("=>{" + ns + "}");
                             sw.WriteLine();
+                            for (int i = 0; i < Texts.Count; i++)
+                            {
+                                if (Texts[i].Namespace != ns)
+                                    continue;
+                                sw.WriteLine("=>[" + Texts[i].Key + "][" + Texts[i].Hash + "]");
+                                sw.WriteLine(Texts[i].Text);
+                                sw.WriteLine();
+                            }
                         }
                         sw.WriteLine("=>{[END]}");
                         sw.Close();

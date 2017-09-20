@@ -164,8 +164,8 @@ namespace UAssetTools
         {
             ClassIndex = ReadInt32(fs);
             SuperIndex = ReadInt32(fs);
-            // if (FileSummary.bUnversioned || FileSummary.FileVersionUE4 >= 508) // VER_UE4_TemplateIndex_IN_COOKED_EXPORTS
-            //     TemplateIndex = ReadInt32(fs);
+            if (FileSummary.bUnversioned || FileSummary.FileVersionUE4 >= 508) // VER_UE4_TemplateIndex_IN_COOKED_EXPORTS
+                TemplateIndex = ReadInt32(fs);
             OuterIndex = ReadInt32(fs);
             ObjectName.DeSerialize(fs);
             ObjectFlags = ReadUInt32(fs); // need add Load flag? and check bIsAsset?
