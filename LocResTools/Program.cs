@@ -110,6 +110,16 @@ namespace LocResTools
             sw.Close();
         }
 
+        static string Escape(string str)
+        {
+            return str.Replace("[", "$$$$$%%%%%SKOBOCHKA1L%%%%%$$$$$").Replace("]", "$$$$$%%%%%SKOBOCHKA1R%%%%%$$$$$").Replace("{", "$$$$$%%%%%SKOBOCHKA2L%%%%%$$$$$").Replace("}", "$$$$$%%%%%SKOBOCHKA2R%%%%%$$$$$");
+        }
+
+        static string UnEscape(string str)
+        {
+            return str.Replace("$$$$$%%%%%SKOBOCHKA1L%%%%%$$$$$", "[").Replace("$$$$$%%%%%SKOBOCHKA1R%%%%%$$$$$", "]").Replace("$$$$$%%%%%SKOBOCHKA2L%%%%%$$$$$", "{").Replace("$$$$$%%%%%SKOBOCHKA2R%%%%%$$$$$", "}");
+        }
+
         static void Main(string[] args)
         {
             if (args.Length != 3)
@@ -132,11 +142,11 @@ namespace LocResTools
                         StreamWriter sw = new StreamWriter(args[2]);
                         for (int i = 0; i < lr.Namespaces.Count; i++)
                         {
-                            sw.WriteLine("=>{" + lr.Namespaces[i].Key + "}");
+                            sw.WriteLine("=>{" + Escape(lr.Namespaces[i].Key) + "}");
                             sw.WriteLine();
                             for (int j = 0; j < lr.Namespaces[i].Value.Count; j++)
                             {
-                                sw.WriteLine("=>[" + lr.Namespaces[i].Value[j].Key + "][" + lr.Namespaces[i].Value[j].Hash + "]");
+                                sw.WriteLine("=>[" + Escape(lr.Namespaces[i].Value[j].Key) + "][" + lr.Namespaces[i].Value[j].Hash + "]");
                                 sw.WriteLine(lr.Namespaces[i].Value[j].String);
                                 sw.WriteLine();
                             }
@@ -162,7 +172,7 @@ namespace LocResTools
 
                                 // read string
                                 line = line.Substring(3);
-                                string Key = line.Substring(0, line.IndexOf(']'));
+                                string Key = UnEscape(line.Substring(0, line.IndexOf(']')));
                                 line = line.Substring(line.IndexOf('[') + 1);
                                 UInt32 Hash = UInt32.Parse(line.Substring(0, line.IndexOf(']')));
                                 lr.Namespaces[nCurrentNamespace].Value.Add(new StringInfo(Key, Hash, ""));
@@ -175,7 +185,7 @@ namespace LocResTools
                                     lr.Namespaces[nCurrentNamespace].Value[lr.Namespaces[nCurrentNamespace].Value.Count - 1].String = lr.Namespaces[nCurrentNamespace].Value[lr.Namespaces[nCurrentNamespace].Value.Count - 1].String.Substring(0, lr.Namespaces[nCurrentNamespace].Value[lr.Namespaces[nCurrentNamespace].Value.Count - 1].String.Length - 4);
 
                                 // read namespace
-                                string Namespace = line.Substring(3, line.IndexOf('}') - 3);
+                                string Namespace = UnEscape(line.Substring(3, line.IndexOf('}') - 3));
                                 if (Namespace == "[END]")
                                     break;
                                 nCurrentNamespace = lr.Namespaces.Count;
